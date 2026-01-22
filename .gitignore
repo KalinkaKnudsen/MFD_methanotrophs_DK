@@ -1,13 +1,1 @@
-*.rds
-*.fa
-*.fasta
-*.fastq
-*.faa
-*.err
-*.out
-*.png
-*.svg
-*.pdf
-*.tiff
-.vscode/
-*.geojson
+*.tsv
