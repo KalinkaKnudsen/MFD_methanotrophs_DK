@@ -1,7 +1,9 @@
-*.tsv
-*combined_count_table.txt
-*.zip
-*.xlsx
-*.R
-*csv
-*.rds
+#*.tsv
+#*combined_count_table.txt
+#*.zip
+#*.xlsx
+#*.R
+#*.csv
+#*.rds
+# DRAM output files, hosted at Zenodo, too large for GitHub
+data/Metabolism_DRAM.zip
