@@ -1,8 +1,8 @@
 #*.tsv
 #*combined_count_table.txt
-*.zip
+#*.zip
 #*.xlsx
-*.R
+#*.R
 #*.csv
 #*.rds
 # DRAM output files, hosted at Zenodo, too large for GitHub
