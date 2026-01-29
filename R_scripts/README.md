@@ -1,3 +1,3 @@
 # R scripts for analysis and plotting
-Intermediate files will be generated. Follow the designated folder structure
+Intermediate files will be generated, and saved in an "output" folder. Follow the designated folder structure.
 
