@@ -1,5 +1,11 @@
 #!/usr/bin/env Rscript
-
+## ============================================================================
+## 05_Annotation_gtdb_suspects.R
+## Purpose: Analyse and visualise metabolic annotations for GTDB-representative
+##          methanotroph genomes, stratified by taxonomic groups and metabolic
+##          gene presence. Produces publication-quality heatmaps showing methane
+##          oxidation, carbon assimilation, and electron metabolism pathways.
+## ============================================================================
 
 library(cowplot)
 library(vroom)
@@ -12,16 +18,21 @@ library(viridis)
 
 setwd("path/to/your/repo/MFD_methanotrophs_DK/")
 
-
-KEGG<-readRDS("./output/metabolism/KEGG_25_12_02.rds")%>%
+## ---- Load KEGG annotation table and create tree labels ----
+# KEGG_25_12_02.rds: merged functional annotations with GTDB taxonomy (from 04_Annotation.R)
+# tree_label: formatted display label combining Family/Genus/Species with genome ID for heatmap y-axis
+KEGG<-readRDS("./output/KEGG_25_12_02.rds")%>%
   mutate(tree_label = paste0(if_else(Genus == "g__", paste0(Family, ";", Genus), if_else(Species == "s__", paste0(Genus,";",Species), Species)),  " | ", genome ))
 
-
+## Load color palette and gene metadata
+# methane_colors: predefined RGB color map for enzyme types (pMMO, sMMO, H4MPT, etc.)
 methane_colors<-readRDS("palette_methane_colors.rds")%>%
   unlist()
 names(methane_colors)[names(methane_colors) == "-"] <- "Formate oxidation"
 
-
+## ---- Load and standardize KO metadata (gene labels, pathways) ----
+# KO_KSK_25_08_12.xlsx: KEGG Orthology metadata with pathway mappings and gene names
+# Create abbreviated pathway names and gene labels for heatmap visualization; split Metabolic_step for multi-line facet labels
 KOs<-read_excel("KO_KSK_25_08_12.xlsx") %>%
   mutate (Pathway = gsub ("Formaldehyde oxidation" , "Form.ald.oxi.", Pathway))%>%
   mutate (Pathway = gsub ("Formaldehyde assim. H4F" , "Form.ald. assim. H4F", Pathway))%>%
@@ -40,23 +51,23 @@ KOs<-read_excel("KO_KSK_25_08_12.xlsx") %>%
   mutate(Metabolic_step = gsub("Carbon assimilation", "Carbon\nassimilation", Metabolic_step))%>%
   mutate(Metabolic_step = gsub("Custom HMM", "Custom\nHMM", Metabolic_step))
 
+## ---- Prepare KEGG data for visualization ----
+# Sort by genus for consistency; create combined gene+step label for heatmap x-axis annotation
 KEGG_sort<-KEGG%>%
   arrange(Genus)
 
 KEGG<-KEGG%>%
   mutate (gene_label = paste0(Gene_collapsed , ' ',  Pathway_step))
 
-
-####################################################################################################################################
-###################### From here, we are working with all the genomes from GTDB that I have investigated ###########################
-####################################################################################################################################
-
-
+## ---- Create taxonomic labels for heatmap visualization ----
+# class_label: combined Class;Family;Species|genome for detailed sample identification in heatmaps
 KEGG<-KEGG%>%
   mutate(class_label = paste0(Class, ";", Family,";", tree_label))
 
-
-genes_remove_string<-c("Nitrosomonadaceae (1/3)", "Homologous_MO (1/3)", "Nitrosomonas (1/3)", "Propane_MO_Actino_cluster (1/3)", 
+## ---- Define exclusion lists for contaminants and non-methanotrophs ----
+# genes_remove_string: gene families from non-methane-oxidizers (nitrifiers, amoA, non-specific MOX)
+# genus_remove_string: non-methanotroph genera to exclude (nitrifiers, nitrospirae, etc.)
+genes_remove_string<-c("Nitrosomonadaceae (1/3)", "Homologous_MO (1/3)", "Nitrosomonas (1/3)", "Propane_MO_Actino_cluster (1/3)",
                        "Homologous_pmoA (1/3)", "Cycloclasticus (1/3)", "Betaproteobacteria_amoA (1/3)",
                        "Nitrosococcus (1/3)", "Nitrospira_clade_B (1/3)", "Actinobacteria (1/3)", "Homologous_Rhodopila (1/3)")
 
@@ -66,6 +77,9 @@ genus_remove_string<-c("g__Methylocella", "g__Methylomonas", "g__Methylocystis",
                        "g__Methylicorpusculum", "g__Methylomarinum", "g__Methylococcus", "g__Methylohalobius", "g__Methylacidimicrobium", "g__Methylacidiphilum", "g__Methylacidithermus",
                        "g__Methyloprofundus")
 
+## ---- Filter genomes  ----
+# genomes_keep: GTDB representatives with Module C1 (methane oxidation) + mmoX/pmoA detection
+# Exclude: MFD MAGs, non-methane oxidizers (nitrifiers), low-quality gene assignments
 genomes_keep<-KEGG %>% 
   filter(!grepl("MFD|LIB", genome))%>%
   filter(!is.na(Genus))%>%
@@ -78,7 +92,8 @@ genomes_keep<-KEGG %>%
   filter(!Genus %in% genus_remove_string)%>%
   distinct()
 
-
+## ---- Extract unique methane-oxidation genes from GTDB methanotrophs ----
+# genes_keep: unique mmoX/pmoA gene types present in Module C1 methanotrophs
 genes_keep<-genomes_keep %>% 
   filter(!grepl("MFD|LIB", genome))%>%
   filter(Module == 'C1') %>% 
@@ -88,108 +103,10 @@ genes_keep<-genomes_keep %>%
   select(gene_label)%>%
   distinct()
 
-# pl <- KEGG %>% 
-#   filter(genome %in% genomes_keep$genome)%>%
-#   filter(Module == 'C1') %>% 
-#   filter(!Metabolic_step=="Custom\nHMM")%>%
-#   #filter(type %in% c('LR-MAG', 'GTDB'))%>%
-#   mutate(presence=if_else(presence==0, NA, presence))%>%
-#   mutate(Metabolic_step = fct_relevel(Metabolic_step, KOs$Metabolic_step)) %>%
-#   #  mutate(Type=fct_relevel(Type, unique(KOs$Type)))%>%
-#   mutate(gene_label = fct_relevel(gene_label, KOs$gene_label)) %>%
-#   ggplot(aes(x = gene_label, y = class_label))+ 
-#   geom_tile(aes(fill = if_else(is.na(presence),  "white", Type)), color="grey90", linewidth=0.1 ) + 
-#   scale_fill_manual(na.value="transparent", values=c(
-#     "pMMO"="#b3943c",
-#     "sMMO"="darkgreen",
-#     "calcium (mxa)"="#5e4fa2",
-#     "lanthanide (xoxF)"="#c46ca1",
-#     "putative"="grey75",
-#     "H4MPT"="#d97512",
-#     "GSH"="turquoise4",
-#     "H4F"="darkred",
-#     "Serine cycle"="darkred",
-#     "RuMP cycle"="darkblue",
-#     "CBB cycle"="#679b60",
-#     "Formate oxidation"="#679b60"
-#   )) +
-#   facet_nested(. ~Metabolic_step, scales = "free", space = "free") +  # Display Pathway names above the plot
-#   theme(axis.text.x = element_text(angle = 45, hjust = 1, size=8), 
-#         axis.text.y = element_blank(),
-#         axis.ticks.x = element_line(linewidth = 0.1),
-#         axis.ticks.y = element_blank(),
-#         strip.clip = "off",
-#         strip.text.x = element_text(size = 8, face="bold"),  # Size for x-axis facet labels
-#         strip.text.y = element_blank(), 
-#         strip.background = element_blank(),
-#         axis.title = element_blank(),
-#         legend.position = "none",
-#         panel.spacing = unit(0.03, "cm", data = NULL),
-#         legend.title=element_blank(),
-#         panel.background = element_rect(fill="white")
-#   )
-# 
-# pl
-# 
-# 
-# CM <- KEGG %>% 
-#   filter(genome %in% genomes_keep$genome)%>%
-#   filter(Module == 'C1') %>% 
-#   filter(Metabolic_step=="Custom\nHMM")%>%
-#   filter(gene_label %in% genes_keep$gene_label)%>%
-#   mutate(presence=if_else(presence==0, NA, presence))%>%
-# #  filter(presence>0)%>%
-#   mutate(Metabolic_step = fct_relevel(Metabolic_step, KOs$Metabolic_step)) %>%
-#   mutate(gene_label = fct_relevel(gene_label, KOs$gene_label)) %>%
-#   ggplot(aes(x = gene_label, y = class_label))+ 
-#   geom_tile(aes(fill = if_else(is.na(presence),  "white", Type)), color="grey90", linewidth=0.15 ) + 
-#   scale_fill_manual(values=c(methane_colors), na.value = "white") +
-#   facet_nested(. ~ Metabolic_step, scales = "free", space = "free") +  # Display Pathway names above the plot
-#   theme(axis.text.x = element_text(angle = 45, hjust = 1, size=8), 
-#         axis.text.y = element_text(size=8),
-#         axis.ticks = element_line(linewidth = 0.1),
-#         axis.title = element_blank(),
-#         legend.position = "none",
-#         strip.clip = "off",
-#         strip.text.x = element_text(size = 8, face="bold"),  # Size for x-axis facet labels
-#         strip.text.y=element_blank(),
-#         strip.background = element_blank(),
-#         text = element_text(family = "Arial"),
-#         panel.spacing = unit(0.03, "cm", data = NULL),
-#         legend.title=element_blank(),
-#         panel.background = element_rect(fill="white"))+
-#   scale_x_discrete(c(0,0))+
-#   scale_y_discrete(c(0,0))
-# 
-# CM
-# 
-# options("aplot_guides" = "keep")
-# met<-pl%>%aplot::insert_left(CM, width=0.32)
-# #met
-# 
-# 
-# ggsave("./output/metabolism/gtdb_met_25_08_11.png",met, height=20, width=22, dpi=400)
 
+unique(CM$data$genome) 
 
-unique(CM$data$genome)
-
-
-
-# 
-# missing_DRAM<-setdiff(CM$data%>%filter(presence==1)%>%select(genome)%>%distinct(), 
-#                       pl$data%>%filter(!Metabolic_step=="Custom\nHMM")%>%filter(presence==1)%>%
-#                         select(genome)%>%distinct())
-# 
-# x<-KEGG%>%filter(genome %in% missing_DRAM$genome)%>%select(class_label, Genus)%>%distinct()
-# 
-
-#readr::write_csv(missing_DRAM, "~/data/MFD/annotation_combined/DRAM_25_03_21_gtdb/missing_genomes.txt", col_names = FALSE)
-
-
-
-# Okay now, I can start with seperation into TUSC+Bin and the rest 
-
-
+## ---- Filter and visualize Binatia/Gemmatimonadetes (candidate lineages) ----
 
 genomes_Bin_keep<-KEGG %>% 
   filter(!grepl("MFD|LIB", genome))%>%
@@ -204,7 +121,7 @@ genomes_Bin_keep<-KEGG %>%
   filter(!Genus %in% genus_remove_string)%>%
   distinct()
 
-
+## ---- Extract genes unique to Binatia/Gemmatimonadetes for visualization ----
 genes_Bin_keep<-genomes_Bin_keep %>% 
   filter(!grepl("MFD|LIB", genome))%>%
   filter(Module == 'C1') %>% 
@@ -219,19 +136,16 @@ genes_remove<-KEGG%>%  filter(Metabolic_step=="Custom\nHMM")%>%
   filter(!gene_label %in% genes_Bin_keep$gene_label)%>%
   select(gene_label)%>%distinct()
 
-
+## ---- Create Binatia/Gemmatimonadetes heatmap showing methane oxidation genes ----
 pl_bin_tusc <- KEGG %>% 
   filter(genome %in% genomes_Bin_keep$genome)%>%
   mutate(fam_label=paste0(Family, " ", Species))%>%
   filter(Module == 'C1') %>% 
   filter(!gene_label %in% genes_remove$gene_label)%>%
-  #filter(!Metabolic_step=="Custom\nHMM")%>%
-  #filter(type %in% c('LR-MAG', 'GTDB'))%>%
   mutate(presence=if_else(presence==0, NA, presence))%>%
   mutate(Metabolic_step = fct_relevel(Metabolic_step, KOs$Metabolic_step)) %>%
-  #  mutate(Type=fct_relevel(Type, unique(KOs$Type)))%>%
   mutate(gene_label = fct_relevel(gene_label, KOs$gene_label)) %>%
-  ggplot(aes(x = gene_label, y = fam_label))+ 
+  ggplot(aes(x = gene_label, y = fam_label))+
   geom_tile(aes(fill = if_else(is.na(presence),  "white", Type)), color="grey90", linewidth=0.1 ) + 
   scale_fill_manual(na.value="transparent", values=c(
     "pMMO"="#b3943c",
@@ -266,9 +180,10 @@ pl_bin_tusc <- KEGG %>%
   )
 
 pl_bin_tusc
-#ggsave("./output/metabolism/gtdb_Bin_TUSC_met_25_08_13.png",pl_bin_tusc, height=6, width=14, dpi=400)
 
-ggsave("./output/metabolism_Extended_figs/GTDB_Bin_TUSC_25_12_10.png",pl_bin_tusc,
+## ---- Export Binatia/Gemmatimonadetes heatmap ----
+# Save high-resolution PNG and SVG for publication
+ggsave("./output/GTDB_Bin_TUSC_25_12_10.png",pl_bin_tusc,
        units = c("mm"),
        height = 90,
        width = 190,
@@ -276,7 +191,7 @@ ggsave("./output/metabolism_Extended_figs/GTDB_Bin_TUSC_25_12_10.png",pl_bin_tus
 
 
 
-ggsave("./output/metabolism_Extended_figs/GTDB_Bin_TUSC_25_12_10.svg",pl_bin_tusc,
+ggsave("./output/GTDB_Bin_TUSC_25_12_10.svg",pl_bin_tusc,
        units = c("mm"),
        height = 90,
        width = 190,
@@ -286,24 +201,18 @@ ggsave("./output/metabolism_Extended_figs/GTDB_Bin_TUSC_25_12_10.svg",pl_bin_tus
 
 
 
-############ Great, that works nicely #########
 
-### Now, I want to have a look at the genomes that are somewhat doubtfull ##
-## First round, I do not want any of the genomes from the "Methylomonadaceae" or the "Methylococcaceae"
-
-
+## ---- Visualize methanotrophs (excluding Binatia and Methylomonadaceae) ----
 pl <- KEGG %>% 
   filter(genome %in% genomes_keep$genome)%>%
   filter(!genome %in% genomes_Bin_keep$genome)%>%
   filter(!Family %in% c("f__Methylomonadaceae", "f__Methylococcaceae"))%>%
   filter(Module == 'C1') %>% 
   filter(!Metabolic_step=="Custom\nHMM")%>%
-  #filter(type %in% c('LR-MAG', 'GTDB'))%>%
   mutate(presence=if_else(presence==0, NA, presence))%>%
   mutate(Metabolic_step = fct_relevel(Metabolic_step, KOs$Metabolic_step)) %>%
-  #  mutate(Type=fct_relevel(Type, unique(KOs$Type)))%>%
   mutate(gene_label = fct_relevel(gene_label, KOs$gene_label)) %>%
-  ggplot(aes(x = gene_label, y = Species))+ 
+  ggplot(aes(x = gene_label, y = Species))+
   geom_tile(aes(fill = if_else(is.na(presence),  "white", Type)), color="grey90", linewidth=0.1 ) + 
   scale_fill_manual(na.value="transparent", values=c(
     "pMMO"="#b3943c",
@@ -319,8 +228,8 @@ pl <- KEGG %>%
     "CBB cycle"="#679b60",
     "Formate oxidation"="#679b60"
   )) +
-  facet_nested(.~Metabolic_step, scales = "free", space = "free") +  # Display Pathway names above the plot
-  theme(axis.text.x = element_text(angle = 45, hjust = 1, size=8), 
+  facet_nested(.~Metabolic_step, scales = "free", space = "free") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1, size=8),
         axis.text.y = element_blank(),
         axis.ticks.x = element_line(linewidth = 0.1),
         axis.ticks.y = element_blank(),
@@ -338,12 +247,8 @@ pl <- KEGG %>%
 
 pl
 
-
-
-
-############# Instead of patching two, I can do like so: ###
-
-
+## ---- Filter genes for broader methanotroph visualization (excluding Methylococcales) ----
+# genes_keep: genes present in all GTDB methanotrophs except Binatia and Methylococcales families
 genes_keep<-genomes_keep %>% 
   filter(!grepl("MFD|LIB", genome))%>%
   filter(!genome %in% genomes_Bin_keep$genome)%>%
@@ -359,8 +264,6 @@ genes_keep<-genomes_keep %>%
 genes_remove<-KEGG%>%  filter(Metabolic_step=="Custom\nHMM")%>%
   filter(!gene_label %in% genes_keep$gene_label)%>%
   select(gene_label)%>%distinct()
-
-
 
 pl_2 <- KEGG %>% 
   filter(genome %in% genomes_keep$genome)%>%
@@ -381,14 +284,10 @@ pl_2 <- KEGG %>%
   mutate(gene_label=if_else(gene_label=="Methylococcales_unknown (1/3)", paste0("Methylococcaceae_pmoA (1/3)"), gene_label))%>%
   filter(Module == 'C1') %>% 
   filter(!gene_label %in% genes_remove$gene_label)%>%
-  #filter(!Metabolic_step=="Custom\nHMM")%>%
-  #filter(type %in% c('LR-MAG', 'GTDB'))%>%
   mutate(presence=if_else(presence==0, NA, presence))%>%
   mutate(Metabolic_step = fct_relevel(Metabolic_step, KOs$Metabolic_step)) %>%
-  #  mutate(Type=fct_relevel(Type, unique(KOs$Type)))%>%
   mutate(gene_label = fct_relevel(gene_label, KOs$gene_label)) %>%
-  #mutate(gene_label=gsub(" (1/3)", "", gene_label))%>%
-  ggplot(aes(x = gene_label, y = fam_label))+ 
+  ggplot(aes(x = gene_label, y = fam_label))+
   geom_tile(aes(fill = if_else(is.na(presence),  "white", Type)), color="grey90", linewidth=0.1 ) + 
   scale_fill_manual(na.value="transparent", values=c(
     "pMMO"="#b3943c",
@@ -404,8 +303,8 @@ pl_2 <- KEGG %>%
     "CBB cycle"="#679b60",
     "Formate oxidation"="#679b60"
   )) +
-  facet_nested(Class~Metabolic_step, scales = "free", space = "free") +  # Display Pathway names above the plot
-  theme(axis.text.x = element_text(angle = 45, hjust = 1, size=5), 
+  facet_nested(Class~Metabolic_step, scales = "free", space = "free") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1, size=5),
         axis.text.y = element_text(size=5, margin = margin(l = -1)),
         axis.ticks.x = element_line(linewidth = 0.1),
         axis.ticks.y = element_blank(),
@@ -423,11 +322,7 @@ pl_2 <- KEGG %>%
         plot.margin = margin(t = 0, r = 0, b = 0, l = 0, unit = "cm")
   )
 
-#pl_2
-
-
-#ggsave("./output/metabolism/gtdb_sub_met_25_08_13.png",pl_2, height=13, width=16, dpi=400)
-
+## ---- Export detailed multi-family heatmap ----
 ggsave("./output/metabolism_Extended_figs/GTDB_gtdb_sub_met_25_12_10.png",pl_2,
        units = c("mm"),
        height = 210,
@@ -442,33 +337,24 @@ ggsave("./output/metabolism_Extended_figs/GTDB_gtdb_sub_met_25_12_10.svg",pl_2,
        width = 185,
        dpi=300)
 
-
-
+## ---- Filter for Methylococcales methanotrophs and create focused heatmap ----
+# Subset genomes to Methylococcales order + JACCXJ01 family 
 
 genes_keep<-genomes_keep %>% 
   filter(!grepl("MFD|LIB", genome))%>%
   filter(!genome %in% genomes_Bin_keep$genome)%>%
-  # filter(Family %in% c("f__Methylomonadaceae", "f__Methylococcaceae"))%>%
   filter(Order %in% c("o__Methylococcales") | Family %in% c("f__JACCXJ01"))%>%
   filter(Module == 'C1') %>% 
   filter(Metabolic_step=="Custom\nHMM")%>%
   filter(presence==1)%>%
   select(gene_label)%>%
-  # mutate(gene_label = fct_relevel(gene_label, KOs$gene_label)) %>%
   distinct()
 
-genes_remove<-KEGG%>%  filter(Metabolic_step=="Custom\nHMM")%>%
-  filter(!gene_label %in% genes_keep$gene_label)%>%
-  select(gene_label)%>%distinct()
-
-
+## ---- Identify Methylococcales-specific genes  ----
 print(n=26, KEGG%>%filter(gene_label %in% genes_keep$gene_label)%>%
         select(KO, gene_label)%>%distinct())
 
-
-
-  #mutate(gene_label=if_else(grepl("Methylotenera|JABFRO01", gene_label), paste0("Methylococcales_like_mmoX (1/3)"), gene_label))%>%
-
+## ---- Methylococcales-focused heatmap  ----
 pl_3 <- KEGG %>% 
   filter(genome %in% genomes_keep$genome)%>%
   filter(!genome %in% genomes_Bin_keep$genome)%>%
@@ -482,13 +368,11 @@ pl_3 <- KEGG %>%
   mutate(gene_label=if_else(gene_label %in% c("Methylococcales_mmoX (1/3)"), paste0("Methyloccocaceae_mmoX (1/3)"), gene_label))%>%
   filter(Module == 'C1') %>% 
   filter(!gene_label %in% genes_remove$gene_label)%>%
-  #filter(!Metabolic_step=="Custom\nHMM")%>%
-  #filter(type %in% c('LR-MAG', 'GTDB'))%>%
   mutate(presence=if_else(presence==0, NA, presence))%>%
   mutate(Metabolic_step = fct_relevel(Metabolic_step, KOs$Metabolic_step)) %>%
   #  mutate(Type=fct_relevel(Type, unique(KOs$Type)))%>%
   mutate(gene_label = fct_relevel(gene_label, KOs$gene_label)) %>%
-  ggplot(aes(x = gene_label, y = fam_label))+ 
+  ggplot(aes(x = gene_label, y = fam_label))+
   geom_tile(aes(fill = if_else(is.na(presence),  "white", Type)), color="grey90", linewidth=0.1 ) + 
   scale_fill_manual(na.value="transparent", values=c(
     "pMMO"="#b3943c",
@@ -526,7 +410,7 @@ pl_3 <- KEGG %>%
 pl_3
 
 
-ggsave("./output/metabolism_Extended_figs/GTDB_Methylococcales_gtdb_sub_met_25_12_10.png",pl_3,
+ggsave("output/GTDB_Methylococcales_gtdb_sub_met_25_12_10.png",pl_3,
        units = c("mm"),
        height = 170,
        width = 185,
@@ -534,7 +418,7 @@ ggsave("./output/metabolism_Extended_figs/GTDB_Methylococcales_gtdb_sub_met_25_1
 
 
 
-ggsave("./output/metabolism_Extended_figs/GTDB_Methylococcales_gtdb_sub_met_25_12_10.svg",pl_3,
+ggsave("output/GTDB_Methylococcales_gtdb_sub_met_25_12_10.svg",pl_3,
        units = c("mm"),
        height = 170,
        width = 185,
@@ -542,19 +426,8 @@ ggsave("./output/metabolism_Extended_figs/GTDB_Methylococcales_gtdb_sub_met_25_1
 
 
 
-
-
-
-
-
-
-
-
-
-
-##################### Making a quick MFD-TUSC plot ######################
-
-
+## ---- MFD Binatia/Gemmatimonadetes heatmap (MFD-TUSC/Bin candidates) ----
+# Subset MFD MAGs to Binatia and Gemmatimonadetes classes for visualization
 genomes_Bin_keep<-KEGG %>% 
   filter(grepl("MFD|LIB", genome))%>%
   filter(!is.na(Genus))%>%
@@ -578,87 +451,20 @@ genes_Bin_keep<-genomes_Bin_keep %>%
   select(gene_label)%>%
   distinct()
 
-
-## Okay let us have a tiny look at cont and comp. 
-mags_v4_low_comp<-vroom("/projects/microflora_danica/MFD-LR/mags_v4/MFD_mags_V4.tsv")%>%
-  filter(bin %in% genomes_Bin_keep$genome)%>%
-  filter(Completeness_CheckM2<80)
-
-mags_SR_low_comp<-vroom("/projects/microflora_danica/MFD-SR/results/mags_shallow_all.tsv")%>%
-  filter(bin %in% genomes_Bin_keep$genome)%>%filter(Completeness_CheckM2<80)
-
-genomes_Bin_keep_filt<-genomes_Bin_keep%>%
-  filter(!genome %in% mags_v4_low_comp$bin)%>%
-  filter(!genome %in% mags_SR_low_comp$bin)
-
-
+## Identify genes for exclusion in other visualizations
 genes_remove<-KEGG%>%  filter(Metabolic_step=="Custom\nHMM")%>%
   filter(!gene_label %in% genes_Bin_keep$gene_label)%>%
   select(gene_label)%>%distinct()
 
-
-
-### counts 
-genomes_Bin_keep%>%ungroup()%>%filter(Gene=="TUSC")%>%count(drep)
-genomes_Bin_keep%>%ungroup()%>%group_by(Order)%>%filter(!Gene=="TUSC")%>%count(drep)
-
-# 
-# drep<-vroom("/home/bio.aau.dk/vj52ou/data/MFD/mfd_all_drep_reps.tsv")%>%
-#   rename(genome=bin)
-# 
-# genomes_Bin_keep2 <- genomes_Bin_keep %>%
-#   left_join(drep) %>%
-#   # 1) Genus/family text to use in labels (strip g__/f__)
-#   mutate(
-#     genus_or_family = if_else(
-#       is.na(Genus),
-#       str_replace_na(Family, "") %>% str_replace("^f__", ""),
-#       str_replace(Genus, "^g__", "")
-#     )
-#   ) %>%
-#   # 2) MAG numbering: row number within (genus/family, drep)
-#   group_by(genus_or_family, drep) %>%
-#   mutate(mag_number = row_number()) %>%
-#   ungroup() %>%
-#   # 3) Dup numbering: row number within species_rep cluster
-#   group_by(species_rep) %>%
-#   mutate(dup_number = row_number()) %>%
-#   ungroup() %>%
-#   # 4) Build a per-row MAG label (used by the representative)
-#   mutate(mag_label = paste0(genus_or_family, " MAG_", mag_number)) %>%
-#   # 5) Broadcast the representative MAG label within each species_rep group
-#   group_by(species_rep) %>%
-#   mutate(
-#     rep_label_1 = mag_label[which(genome == species_rep)][1],
-#     rep_label_1 = coalesce(rep_label_1, first(mag_label)),
-#     # 6) Final label:
-#     #    - representative gets the MAG label (genus-based numbering)
-#     #    - non-reps get "sp. dup. <dup_number>" (species-cluster numbering)
-#     rep_label_2 = if_else(
-#       genome == species_rep,
-#       rep_label_1,
-#       paste0(rep_label_1, " sp. dup. ", dup_number)
-#     )
-#   ) %>%
-#   ungroup()%>%select(rep_label_2, genome)
-
-
-
-
+## ---- MFD Binatia/Gemmatimonadetes metabolic heatmap ----
 pl_bin_tusc <- KEGG %>% 
-  # filter(genome %in% genomes_Bin_keep_filt$genome)%>%
-  # left_join(genomes_Bin_keep2)%>%
   mutate(Order=gsub("o__", "", Order))%>% 
-  #mutate(fam_label=paste0(Family, " ", Species))%>%
   filter(Module == 'C1') %>% 
   filter(!gene_label %in% genes_remove$gene_label)%>%
-  #filter(!Metabolic_step=="Custom\nHMM")%>%
-  #filter(type %in% c('LR-MAG', 'GTDB'))%>%
   mutate(presence=if_else(presence==0, NA, presence))%>%
   mutate(Metabolic_step = fct_relevel(Metabolic_step, KOs$Metabolic_step)) %>%
-  #  mutate(Type=fct_relevel(Type, unique(KOs$Type)))%>%
   mutate(gene_label = fct_relevel(gene_label, KOs$gene_label)) %>%
-  ggplot(aes(x = gene_label, y = label))+ 
+  ggplot(aes(x = gene_label, y = label))+
   geom_tile(aes(fill = if_else(is.na(presence),  "white", Type)), color="grey90", linewidth=0.1 ) + 
   scale_fill_manual(na.value="transparent", values=c(
     "pMMO"="#b3943c",
@@ -695,24 +501,22 @@ pl_bin_tusc <- KEGG %>%
 
 pl_bin_tusc
 
-ggsave("./output/metabolism_Extended_figs/MFD_Bin_TUSC_sub_met_25_12_10.png",pl_bin_tusc,
+## ---- Export MFD Binatia/Gemmatimonadetes heatmap ----
+
+ggsave("output/MFD_Bin_TUSC_sub_met_25_12_10.png",pl_bin_tusc,
        units = c("mm"),
        height = 170,
        width = 185,
        dpi=300)
 
-ggsave("./output/metabolism_Extended_figs/MFD_Bin_TUSC_sub_met_25_12_10.svg",pl_bin_tusc,
+ggsave("output/MFD_Bin_TUSC_sub_met_25_12_10.svg",pl_bin_tusc,
        units = c("mm"),
        height = 170,
        width = 185,
        dpi=300)
 
-
-
-
-################### Let us make an alternative electrons plot ########################
-
-
+## ---- Electron donor/acceptor metabolism heatmap (MFD Binatia/Gemmatimonadetes) ----
+# Focus on nitrogen, sulfur, energy (H2/CO oxidation) pathways; exclude methane oxidation
 NS <- KEGG %>% 
   filter(genome %in% genomes_Bin_keep$genome)%>%
   mutate(Order=gsub("o__", "", Order))%>% 
@@ -759,7 +563,6 @@ NS <- KEGG %>%
         strip.clip = "off",
         strip.text.x = element_text(size = 5, face="bold", margin = margin(b = -0.5)),  # Size for x-axis facet labels
         strip.text.y = element_text(size=5, angle=0, hjust=0, margin = margin(r = -2)),
-        #  strip.text.y = element_blank(), 
         strip.background = element_blank(),
         axis.title = element_blank(),
         legend.position = "none",
@@ -773,56 +576,16 @@ NS <- KEGG %>%
 
 NS
 
-ggsave("./output/metabolism_Extended_figs/MFD_Bin_TUSC_Nitro_sulphur_25_12_10.png",NS,
+ggsave("output/MFD_Bin_TUSC_Nitro_sulphur_25_12_10.png",NS,
        units = c("mm"),
        height = 170,
        width = 185,
        dpi=300)
 
-ggsave("./output/metabolism_Extended_figs/MFD_Bin_TUSC_Nitro_sulphur_25_12_10.svg",NS,
+ggsave("output/MFD_Bin_TUSC_Nitro_sulphur_25_12_10.svg",NS,
        units = c("mm"),
        height = 170,
        width = 185,
        dpi=300)
 
-#ggsave("./output/metabolism/TUSC_Binatales_MFD_met_Nitro_sulphur_C_25_08_21.png",NS, height=12, width=18, dpi=400)
-
-
-
-
-
-
-
-
-
-#### Okay some DRAM were missing, I will figure out which:
-x1<-KEGG %>% 
-  filter(genome %in% genomes_Bin_keep$genome)%>%
-  filter(Module == 'C1') %>% 
-  filter(!gene_label %in% genes_remove$gene_label)%>%
-  filter(Metabolic_step=="Custom\nHMM")%>%
-  filter(presence==1)%>%
-  select(genome)%>%
-  distinct()
-
-
-x2<-KEGG %>% 
-  filter(genome %in% genomes_Bin_keep$genome)%>%
-  filter(Module == 'C1') %>% 
-  filter(!gene_label %in% genes_remove$gene_label)%>%
-  filter(!Metabolic_step=="Custom\nHMM")%>%
-  filter(presence==1)%>%
-  select(genome)%>%
-  distinct()
-
-missing<-setdiff(x1, x2)
-
-
-readr::write_csv(missing, "~/data/MFD/annotation_combined/genomes_missing_25_08_13.txt", col_names = FALSE)
-
-
-
-###3 Getting the TUSC genomes:
-x3<-genomes_Bin_keep%>%ungroup()%>%filter(Gene=="TUSC")%>%select(genome)
-readr::write_csv(x3, "/home/bio.aau.dk/vj52ou/data/MFD/deep_metagenomes/methanotrophs/graftm_output/mags_v4/TUSC_genes/genomes.txt", col_names = FALSE)
 
