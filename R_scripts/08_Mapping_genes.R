@@ -1,31 +1,26 @@
 # Script for mapping gene abundances on DK-map
 # Kalinka Sand Knudsen
-.libPaths(c("/home/bio.aau.dk/vj52ou/software/R_packages.v.4.3.2", .libPaths()))
-setwd("~/scripts/MFD/methanotrophs/R_scripts/output/")
+setwd("path/to/your/repo/MFD_methanotrophs_DK/")
 
 
 ### Setup env
 library(tidyverse)
 library(ggplot2)
 library(ggrepel)
-#library(ggpp)
 library(ggspatial)
 library(sf)
-#library(grid)
-#library(rnaturalearth)
-#library(rnaturalearthdata)
 library(vroom)
 library(patchwork)
 library(ggtext)
 
 ## load data 
-OTU_filtered_long<-readRDS("OTU_filtered_long_24_06_24.rds")
-seq_meta <- vroom("../2023-10-11_samples_minimal_metadata_collapsed.csv", delim = ",") %>%
+OTU_filtered_long<-readRDS("output/OTU_filtered_long_24_06_24.rds")
+seq_meta <- vroom("data/2023-10-11_samples_minimal_metadata_collapsed.csv", delim = ",") %>%
   mutate(flat_name=gsub(".fastq.gz","", flat_name))%>%
   rename(SeqId = flat_name) %>%
   select(SeqId, fieldsample_barcode)
 
-meta<-readxl::read_excel("../2025-02-19_mfd_db.xlsx")%>%left_join(seq_meta)
+meta<-readxl::read_excel("data/2025-02-19_mfd_db.xlsx")%>%left_join(seq_meta)
 
 
 
@@ -33,11 +28,7 @@ meta<-readxl::read_excel("../2025-02-19_mfd_db.xlsx")%>%left_join(seq_meta)
 points <- meta %>%
   select(fieldsample_barcode, SeqId, longitude, latitude, mfd_hab1)
 
-## World data
-#world <- rnaturalearth::ne_countries(scale = "large", returnclass = "sf", country=c("Denmark", "Sweden", "Germany"))
-
-
-world <- st_read(paste0("../dataframes/CNTR_RG_01M_2024_4326.shp/CNTR_RG_01M_2024_4326.shp")) %>%
+world <- st_read(paste0("../CNTR_RG_01M_2024_4326.shp/CNTR_RG_01M_2024_4326.shp")) %>% ######### Needs to be downloaded from EuroGeographics
   st_transform(crs = 4326)%>%
   filter(NAME_ENGL%in%c("Denmark", "Sweden", "Germany"))
 
@@ -71,16 +62,6 @@ lat_point<-57.96323
 points_pmoA2<-OTU_filtered_long%>%filter(type=="pmoA2")%>%filter(Tax_short=="Methylocystis_pmoA2")%>%left_join(meta)%>%arrange(RPKM)
 
 points_pmoA2_heath<-points_pmoA2%>%filter(mfd_hab3=="Wet heath")
-
-### Methylocystis_pmoA2 (only relevant one)
-# Map in the habs: Wet heath, Molina meadows, Decalcified Empetrum dunes, humid dune slacks
-
-
-### USCg in: calcareous grasslands and Xeric sand calcereous grasslands
-
-
-
-
 
 
 ################## loop start ################
@@ -141,7 +122,6 @@ map_heath <- ggplot(data = world) +
 #map_heath
 
 
-
 points_pmoA2_dune_slack<-points_pmoA2%>%filter(mfd_hab3=="Humid dune slacks")
 n_samples <- length(unique(points_pmoA2_dune_slack$fieldsample_barcode))
 
@@ -151,8 +131,6 @@ label_df <- data.frame(
   latitude  = max(points_pmoA2_heath$latitude) + 0.4,
   text = paste0("*Methylocystis pmoA2*<br>Humid dune slacks<br>(n = ", n_samples, ")")
 )
-
-
 
 
 
@@ -202,7 +180,7 @@ map_dune_slack <- ggplot(data = world) +
 
 #map_dune_slack
 # 
-# ggsave("maps/pmoA2_wet_heath.png",
+# ggsave("output/pmoA2_wet_heath.png",
 #        map_heath,
 #        height = 10,
 #        width = 10)
@@ -214,7 +192,7 @@ map_dune_slack <- ggplot(data = world) +
 p_combine<- (map_heath+map_dune_slack)
 
 
-ggsave("maps/Methylocystis_pmoA2_heath_dune_25_10_16.png",
+ggsave("output/Methylocystis_pmoA2_heath_dune_25_10_16.png",
        p_combine,
        units = c("mm"),
        height = 90,
@@ -223,7 +201,7 @@ ggsave("maps/Methylocystis_pmoA2_heath_dune_25_10_16.png",
 
 
 #
-ggsave("maps/Methylocystis_pmoA2_heath_dune_25_10_16.svg",
+ggsave("output/Methylocystis_pmoA2_heath_dune_25_10_16.svg",
        p_combine,
        units = c("mm"),
        height = 90,
@@ -283,7 +261,7 @@ map_meadow
 
 
 
-# ggsave("maps/pmoA2_Molinia_meadows.png",
+# ggsave("output/pmoA2_Molinia_meadows.png",
 #        map_meadow,
 #        height = 10,
 #        width = 10)
@@ -343,7 +321,7 @@ map_Decalcified_Empetrum_dunes
 
 
 
-# ggsave("maps/pmoA2_Decalcified_Empetrum_dunes.png",
+# ggsave("output/pmoA2_Decalcified_Empetrum_dunes.png",
 #        map_Decalcified_Empetrum_dunes,
 #        height = 10,
 #        width = 10)
@@ -400,7 +378,7 @@ map_dune_slack
 
 
 
-# ggsave("maps/pmoA2_dune_slack.png",
+# ggsave("output/pmoA2_dune_slack.png",
 #        map_dune_slack,
 #        height = 10,
 #        width = 10)
@@ -415,17 +393,10 @@ map_dune_slack
 p_combine<- (map_heath+map_meadow) / (map_Decalcified_Empetrum_dunes+map_dune_slack)
 
 
-ggsave("maps/pmoA2_combined.png",
+ggsave("output/pmoA2_combined.png",
        p_combine,
        height = 16,
        width = 16)
-
-
-
-
-
-
-
 
 
 
@@ -518,13 +489,6 @@ map_calcareous
 
 
 
-# ggsave("maps/pmoA2_dune_slack.png",
-#        map_dune_slack,
-#        height = 10,
-#        width = 10)
-
-
-
 
 points_USCg_xeric<-points_summary%>%left_join(meta)%>%
   filter(mfd_hab3%in%c("Xeric sand calcareous grasslands")) #""
@@ -587,12 +551,10 @@ map_xeric <- ggplot(data = world) +
 
 
 
-
-
 p_combine<- map_calcareous + map_xeric
 
 
-ggsave("maps/USCg_combined_25_10_16.png",
+ggsave("output/USCg_combined_25_10_16.png",
        p_combine,
        units = c("mm"),
        height = 90,
@@ -600,49 +562,10 @@ ggsave("maps/USCg_combined_25_10_16.png",
        dpi=300)
 
 
-ggsave("maps/USCg_combined_25_10_16.svg",
+ggsave("output/USCg_combined_25_10_16.svg",
        p_combine,
        units = c("mm"),
        height = 90,
        width = 100,
        dpi=300)
 
-
-
-
-
-
-
-
-
-
-
-### Create DK map with repelled points
-map1 <- ggplot(data = world) + 
-  geom_sf(fill = "antiquewhite") + 
-  geom_point(data = points_pmoA2_heath, aes(x = longitude, y = latitude), size = 1, color = "black") +
-  geom_point_s(data = points_pmoA2_heath, aes(x = longitude, y = latitude, fill = RPKM), 
-               size = 3, alpha = 1, shape = 21,
-               position = position_nudge_center(x = 0.1,
-                                                y = 0.1,
-                                                direction = "radial")) +
-  theme_bw(base_size = 16) + 
-  scale_fill_gradientn(
-    name = "RPKM",  # The label
-    colors = c( "white","#82A3CD", "darkorange", "darkred", "black"),  # Your custom color gradient
-    trans = "sqrt",  # Same as in viridis
-    limits = c(0.00, 5),  # Set the limits manually
-    na.value = "black"  # Handling NA values
-  ) +
-  annotation_scale(location = "bl", width_hint = 0.5) + 
-  annotation_north_arrow(location = "bl", which_north = "true", pad_x = unit(0, "in"), pad_y = unit(0.5, "in"), style = north_arrow_fancy_orienteering) + 
-  coord_sf(xlim = c(7.5, 13.5), ylim = c(54.5, 58), expand = FALSE) + 
-  labs(fill = "Ecospace") +
-  xlab("Longitude") + 
-  ylab("Latitude") + 
-  theme(panel.grid.major = element_line(color = gray(.5), linetype = "dashed", linewidth = 0.5), 
-        panel.background = element_rect(fill = "aliceblue"),
-        axis.title = element_blank(),
-        legend.position = "right")
-
-map1

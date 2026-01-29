@@ -1,8 +1,7 @@
-# Script for mapping gene abundances on DK-map
+# Script for mapping genome (sylph) abundances on DK-map
 # Kalinka Sand Knudsen
-.libPaths(c("/home/bio.aau.dk/vj52ou/software/R_packages.v.4.3.2", .libPaths()))
-setwd("~/scripts/MFD/methanotrophs/R_scripts/output/")
 
+setwd("path/to/your/repo/MFD_methanotrophs_DK/")
 
 ### Setup env
 library(tidyverse)
@@ -19,7 +18,7 @@ library(ggtext)
 
 ## load data 
 
-tax<-readRDS("../MFD_renamed_tax_25_03_04.rds")%>%
+tax<-readRDS("data/MFD_renamed_tax_25_03_04.rds")%>%
   mutate(type = if_else(grepl("MFD", user_genome), 'Microflora Danica','GTDB'),
          type=if_else(grepl("LIB", user_genome), "Microflora Danica", type))%>%
   mutate(tip.label=as.character(user_genome))%>%
@@ -42,7 +41,7 @@ tax<-readRDS("../MFD_renamed_tax_25_03_04.rds")%>%
 
 
 
-sylph<-readRDS("genome_quantification/sylph_gtdb_25_03_06.rds")%>%
+sylph<-readRDS("output/sylph_gtdb_25_03_06.rds")%>%
   mutate(Species=gsub("s__Methylocella sp002890675", "s__Ca. Methyloaffinis lahnbergensis", Species))%>%
   mutate(Species=gsub("s__Methylocella sp004564215", "s__Methylocapsa gorgona", Species))%>%
   mutate(Species=gsub("s__Methylocella sp029855125", "s__Methylocapsa sp. D3K7", Species))
@@ -80,26 +79,26 @@ sylph<-sylph%>%
   filter(!mfd_hab2 %in% c("Spruce", "Willow"))
 
 
-levels_hab2<-readRDS("genome_quantification/levels_hab2_sylph_DMS.rds")
-palette_mfd_hab2<-readRDS("./palette_mfd_hab2_ISME.rds")
+levels_hab2<-readRDS("output/levels_hab2_sylph.rds")
+palette_mfd_hab2<-readRDS("data/palette_mfd_hab2_ISME.rds")
 
 hab2_sort<-sylph%>%
   mutate(SeqId = factor(SeqId, levels = levels_hab2, ordered = TRUE)) %>%
   arrange(SeqId)
 
 
-seq_meta <- vroom("../2023-10-11_samples_minimal_metadata_collapsed.csv", delim = ",") %>%
+seq_meta <- vroom("data/2023-10-11_samples_minimal_metadata_collapsed.csv", delim = ",") %>%
   mutate(flat_name=gsub(".fastq.gz","", flat_name))%>%
   rename(SeqId = flat_name) %>%
   select(SeqId, fieldsample_barcode)
 
-meta<-readxl::read_excel("../2025-02-19_mfd_db.xlsx")%>%left_join(seq_meta)%>%select(SeqId, fieldsample_barcode, longitude, latitude)
+meta<-readxl::read_excel("data/2025-02-19_mfd_db.xlsx")%>%left_join(seq_meta)%>%select(SeqId, fieldsample_barcode, longitude, latitude)
 
 ### Create map of Denmark
 points <- meta %>%
   select(fieldsample_barcode, SeqId, longitude, latitude)
 
-world <- st_read(paste0("../dataframes/CNTR_RG_01M_2024_4326.shp/CNTR_RG_01M_2024_4326.shp")) %>%
+world <- st_read(paste0("data/CNTR_RG_01M_2024_4326.shp")) %>% #### Needs to be downloaded from Eurogeographics 
   st_transform(crs = 4326)%>%
   filter(NAME_ENGL%in%c("Denmark", "Sweden", "Germany"))
 # 
@@ -121,9 +120,6 @@ world <- st_read(paste0("../dataframes/CNTR_RG_01M_2024_4326.shp/CNTR_RG_01M_202
 #         legend.position = "right")
 # 
 # map0
-
-
-
 
 
 
@@ -259,10 +255,6 @@ map_m_silviterra_urban
 
 
 
-########################################
-############ okay pretty interestring, lets compare to another group 
-########################
-
 
 # MAG 14 MFD02809.bin.2.311
 #Methylocystis rosea MAG2 MFD02809.bin.2.26
@@ -365,15 +357,6 @@ map_m_MAG14_urban
 
 
 
-# 
-# p_combine<- (map_m_silviterra_urban+map_m_rosea_urban+map_m_MAG14_urban) 
-# 
-# ggsave("maps/Methylocystis_MAGs_freshwater.png",
-#        p_combine,
-#        height = 8,
-#        width = 24)
-
-
 
 ############################################################################
 ########################## Only Urban enclosed water #######################
@@ -436,7 +419,7 @@ map_m_silviterra_urban <- ggplot(data = world) +
 #map_m_silviterra_urban
 
 # 
-# ggsave("maps/map_m_silviterra_urban_test.png", map_m_silviterra_urban, 
+# ggsave("output/map_m_silviterra_urban_test.png", map_m_silviterra_urban, 
 #        #width=15, 
 #        #height=7, 
 #        units = c("mm"),
@@ -567,7 +550,7 @@ map_m_MAG14_urban <- ggplot(data = world) +
 p_combine<- (map_m_silviterra_urban+map_m_rosea_urban+map_m_MAG14_urban) 
 
 
-ggsave("maps/Methylocystis_MAGs_Urban_enclosed_water_25_10_16.png",
+ggsave("output/Methylocystis_MAGs_Urban_enclosed_water_25_10_16.png",
        p_combine,
        units = c("mm"),
        height = 90,
@@ -575,7 +558,7 @@ ggsave("maps/Methylocystis_MAGs_Urban_enclosed_water_25_10_16.png",
        dpi=300)
 
 
-ggsave("maps/Methylocystis_MAGs_Urban_enclosed_water_25_10_16.svg",
+ggsave("output/Methylocystis_MAGs_Urban_enclosed_water_25_10_16.svg",
        p_combine,
        units = c("mm"),
        height = 90,
@@ -584,261 +567,3 @@ ggsave("maps/Methylocystis_MAGs_Urban_enclosed_water_25_10_16.svg",
 
 
 
-############## and lets have a look at MAG14 grassland
-
-mag_14_clade<-sylph%>%filter(Genus=="g__Methylocystis")%>%
-  filter(user_genome%in%c("MFD02809.bin.2.311"))%>%left_join(meta)%>%
-  filter(mfd_hab2%in%c("Semi-natural humid meadows"))%>%
-  arrange(Taxonomic_abundance)
-
-
-n_samples <- length(unique(mag_14_clade$fieldsample_barcode))
-
-label_df <- data.frame(
-  longitude = min(m_silviterra_clade_sediment$longitude) - 0.5,
-  latitude  = max(m_silviterra_clade_sediment$latitude) + 0.25,
-  text = paste0("*Methylocystis MAG_14*<br>Semi-natural humid meadows (n = ", n_samples, ")")
-)
-
-
-map_m_MAG14_meadows <- ggplot(data = world) + 
-  geom_sf(aes(fill=NAME_ENGL), linewidth=0.2, show.legend = FALSE) +    scale_fill_manual(values = c("Denmark" = "antiquewhite", "Sweden" = "grey90","Germany" = "grey90"))+   ggnewscale::new_scale_fill() +
-  geom_jitter(data = mag_14_clade, aes(x = longitude, y = latitude, fill = Taxonomic_abundance),               
-              size = 3.2, shape = 21, stroke = 0.25,  position = position_jitter(width = 0.04, height = 0.04, seed = 5)) +
-  geom_richtext(
-    data = label_df, aes(x = longitude, y = latitude, label = text), 
-    hjust = 0, vjust = 1, size = 5, fill=NA,  label.color = NA  )+
-  theme_bw(base_size = 16) + 
-  scale_fill_gradientn(
-    name = "RPKM",  # The label
-    colors = c(
-      "#FFFFFF4C",  # white, alpha = 0.3
-      "#82A3CD99",  # #82A3CD, alpha = 0.6
-      "#FF8C00CC",  # darkorange, alpha = 0.6
-      "#8B0000E6",  # darkred, alpha = 0.9
-      "#000000E6"   # black, alpha = 0.9
-    ),  
-    trans = "sqrt",  # Same as in viridis
-    limits = c(0.00, 3),  # Set the limits manually
-    na.value = "black"  # Handling NA values
-  ) +
-  annotation_scale(location = "bl", width_hint = 0.5) + 
-  annotation_north_arrow(location = "bl", which_north = "true", pad_x = unit(0, "in"), pad_y = unit(0.5, "in"), style = north_arrow_fancy_orienteering) + 
-  coord_sf(xlim = c(7.5, 13), ylim = c(54.5, 58), expand = FALSE) + 
-  xlab("Longitude") + 
-  ylab("Latitude") + 
-  theme(panel.grid.major = element_line(color = gray(.5), linetype = "dashed", linewidth = 0.5), 
-        panel.background = element_rect(fill = "aliceblue"),
-        axis.title = element_blank(),
-        legend.position = c(0.9, 0.86),
-        legend.title=element_text(size=12),
-        legend.background = element_blank())
-
-map_m_MAG14_meadows
-
-
-#### avoiding the west-coast, lets compare to mag27
-
-mag_27_clade<-sylph%>%filter(Genus=="g__Methylocystis")%>%
-  filter(user_genome%in%c("MFD03726.bin.1.28"))%>%left_join(meta)%>%
-  filter(mfd_hab2%in%c("Semi-natural humid meadows"))%>%
-  arrange(Taxonomic_abundance)
-
-
-n_samples <- length(unique(mag_27_clade$fieldsample_barcode))
-
-label_df <- data.frame(
-  longitude = min(m_silviterra_clade_sediment$longitude) - 0.5,
-  latitude  = max(m_silviterra_clade_sediment$latitude) + 0.25,
-  text = paste0("*Methylocystis MAG_27*<br>Semi-natural humid meadows (n = ", n_samples, ")")
-)
-
-
-map_m_MAG27_meadows <- ggplot(data = world) + 
-  geom_sf(aes(fill=NAME_ENGL), linewidth=0.2, show.legend = FALSE) +    scale_fill_manual(values = c("Denmark" = "antiquewhite", "Sweden" = "grey90","Germany" = "grey90"))+   ggnewscale::new_scale_fill() +
-  geom_jitter(data = mag_27_clade, aes(x = longitude, y = latitude, fill = Taxonomic_abundance),               
-              size = 3.2, shape = 21, stroke = 0.25,  position = position_jitter(width = 0.04, height = 0.04, seed = 5)) +
-  geom_richtext(
-    data = label_df, aes(x = longitude, y = latitude, label = text), 
-    hjust = 0, vjust = 1, size = 5, fill=NA,  label.color = NA  )+
-  theme_bw(base_size = 16) + 
-  scale_fill_gradientn(
-    name = "RPKM",  # The label
-    colors = c(
-      "#FFFFFF4C",  # white, alpha = 0.3
-      "#82A3CD99",  # #82A3CD, alpha = 0.6
-      "#FF8C00CC",  # darkorange, alpha = 0.6
-      "#8B0000E6",  # darkred, alpha = 0.9
-      "#000000E6"   # black, alpha = 0.9
-    ),  
-    trans = "sqrt",  # Same as in viridis
-    limits = c(0.00, 3),  # Set the limits manually
-    na.value = "black"  # Handling NA values
-  ) +
-  annotation_scale(location = "bl", width_hint = 0.5) + 
-  annotation_north_arrow(location = "bl", which_north = "true", pad_x = unit(0, "in"), pad_y = unit(0.5, "in"), style = north_arrow_fancy_orienteering) + 
-  coord_sf(xlim = c(7.5, 13), ylim = c(54.5, 58), expand = FALSE) + 
-  xlab("Longitude") + 
-  ylab("Latitude") + 
-  theme(panel.grid.major = element_line(color = gray(.5), linetype = "dashed", linewidth = 0.5), 
-        panel.background = element_rect(fill = "aliceblue"),
-        axis.title = element_blank(),
-        legend.position = c(0.9, 0.86),
-        legend.title=element_text(size=12),
-        legend.background = element_blank())
-
-map_m_MAG27_meadows
-
-
-
-########### lets see if MAG14 hates the west coast always
-
-mag_14_clade<-sylph%>%filter(Genus=="g__Methylocystis")%>%
-  filter(user_genome%in%c("MFD02809.bin.2.311"))%>%left_join(meta)%>%
-  #  filter(mfd_hab2%in%c("Semi-natural humid meadows"))%>%
-  arrange(Taxonomic_abundance)
-
-
-n_samples <- length(unique(mag_14_clade$fieldsample_barcode))
-
-label_df <- data.frame(
-  longitude = min(m_silviterra_clade_sediment$longitude) - 0.5,
-  latitude  = max(m_silviterra_clade_sediment$latitude) + 0.25,
-  text = paste0("*Methylocystis MAG_14*<br>All (n = ", n_samples, ")")
-)
-
-
-map_m_MAG14_all <- ggplot(data = world) + 
-  geom_sf(aes(fill=NAME_ENGL), linewidth=0.2, show.legend = FALSE) +    scale_fill_manual(values = c("Denmark" = "antiquewhite", "Sweden" = "grey90","Germany" = "grey90"))+   ggnewscale::new_scale_fill() +
-  geom_jitter(data = mag_14_clade, aes(x = longitude, y = latitude, fill = Taxonomic_abundance),               
-              size = 3.2, shape = 21, stroke = 0.25,  position = position_jitter(width = 0.04, height = 0.04, seed = 5)) +
-  geom_richtext(
-    data = label_df, aes(x = longitude, y = latitude, label = text), 
-    hjust = 0, vjust = 1, size = 5, fill=NA,  label.color = NA  )+
-  theme_bw(base_size = 16) + 
-  scale_fill_gradientn(
-    name = "RPKM",  # The label
-    colors = c(
-      "#FFFFFF4C",  # white, alpha = 0.3
-      "#82A3CD99",  # #82A3CD, alpha = 0.6
-      "#FF8C00CC",  # darkorange, alpha = 0.6
-      "#8B0000E6",  # darkred, alpha = 0.9
-      "#000000E6"   # black, alpha = 0.9
-    ),  
-    trans = "sqrt",  # Same as in viridis
-    limits = c(0.00, 3),  # Set the limits manually
-    na.value = "black"  # Handling NA values
-  ) +
-  annotation_scale(location = "bl", width_hint = 0.5) + 
-  annotation_north_arrow(location = "bl", which_north = "true", pad_x = unit(0, "in"), pad_y = unit(0.5, "in"), style = north_arrow_fancy_orienteering) + 
-  coord_sf(xlim = c(7.5, 13), ylim = c(54.5, 58), expand = FALSE) + 
-  xlab("Longitude") + 
-  ylab("Latitude") + 
-  theme(panel.grid.major = element_line(color = gray(.5), linetype = "dashed", linewidth = 0.5), 
-        panel.background = element_rect(fill = "aliceblue"),
-        axis.title = element_blank(),
-        legend.position = c(0.9, 0.86),
-        legend.title=element_text(size=12),
-        legend.background = element_blank())
-
-map_m_MAG14_all
-
-
-
-
-##########################################################################
-############ Getting Methylocella MAG_7 (fussingø) cluster ###############
-##########################################################################
-
-
-mag_7_clade<-sylph%>%filter(Genus=="g__Methylocella")%>%
-  filter(user_genome%in%c("MFD03399.bin.c.3"))%>%left_join(meta)%>%
-  filter(mfd_hab1%in%c("Forests"))%>%
-  arrange(Taxonomic_abundance)
-
-
-n_samples <- length(unique(mag_7_clade$fieldsample_barcode))
-
-label_df <- data.frame(
-  longitude = min(mag_7_clade$longitude) - 0.5,
-  latitude  = max(mag_7_clade$latitude) + 0.25,
-  text = paste0("*Methylocella MAG_7*<br>All (n = ", n_samples, ")")
-)
-
-
-map_m_MAG7_all <- ggplot(data = world) + 
-  geom_sf(aes(fill=NAME_ENGL), linewidth=0.2, show.legend = FALSE) +    scale_fill_manual(values = c("Denmark" = "antiquewhite", "Sweden" = "grey90","Germany" = "grey90"))+   ggnewscale::new_scale_fill() +
-  geom_jitter(data = mag_7_clade, aes(x = longitude, y = latitude, fill = Taxonomic_abundance),               
-              size = 3.2, shape = 21, stroke = 0.25,  position = position_jitter(width = 0.04, height = 0.04, seed = 5)) +
-  geom_richtext(
-    data = label_df, aes(x = longitude, y = latitude, label = text), 
-    hjust = 0, vjust = 1, size = 5, fill=NA,  label.color = NA  )+
-  theme_bw(base_size = 16) + 
-  scale_fill_gradientn(
-    name = "RPKM",  # The label
-    colors = c(
-      "#FFFFFF4C",  # white, alpha = 0.3
-      "#82A3CD99",  # #82A3CD, alpha = 0.6
-      "#FF8C00CC",  # darkorange, alpha = 0.6
-      "#8B0000E6",  # darkred, alpha = 0.9
-      "#000000E6"   # black, alpha = 0.9
-    ),  
-    trans = "sqrt",  # Same as in viridis
-    limits = c(0.00, 3),  # Set the limits manually
-    na.value = "black"  # Handling NA values
-  ) +
-  annotation_scale(location = "bl", width_hint = 0.5) + 
-  annotation_north_arrow(location = "bl", which_north = "true", pad_x = unit(0, "in"), pad_y = unit(0.5, "in"), style = north_arrow_fancy_orienteering) + 
-  coord_sf(xlim = c(7.5, 13), ylim = c(54.5, 58), expand = FALSE) + 
-  xlab("Longitude") + 
-  ylab("Latitude") + 
-  theme(panel.grid.major = element_line(color = gray(.5), linetype = "dashed", linewidth = 0.5), 
-        panel.background = element_rect(fill = "aliceblue"),
-        axis.title = element_blank(),
-        legend.position = c(0.9, 0.86),
-        legend.title=element_text(size=12),
-        legend.background = element_blank())
-
-map_m_MAG7_all
-
-#some beech, oak and coniferous forests
-
-mag_7_clade_filt<-mag_7_clade%>%filter(mfd_hab2 %in% c("Beech"))%>%#, "Coniferous forest", "Oak","Beech"))%>%
-  arrange(Taxonomic_abundance)
-
-
-
-map_m_MAG7_filt <- ggplot(data = world) + 
-  geom_sf(aes(fill=NAME_ENGL), linewidth=0.2, show.legend = FALSE) +    scale_fill_manual(values = c("Denmark" = "antiquewhite", "Sweden" = "grey90","Germany" = "grey90"))+   ggnewscale::new_scale_fill() +
-  geom_jitter(data = mag_7_clade_filt, aes(x = longitude, y = latitude, fill = Taxonomic_abundance),               
-              size = 3.2, shape = 21, stroke = 0.25,  position = position_jitter(width = 0.04, height = 0.04, seed = 5)) +
-  geom_richtext(
-    data = label_df, aes(x = longitude, y = latitude, label = text), 
-    hjust = 0, vjust = 1, size = 5, fill=NA,  label.color = NA  )+
-  theme_bw(base_size = 16) + 
-  scale_fill_gradientn(
-    name = "RPKM",  # The label
-    colors = c(
-      "#FFFFFF4C",  # white, alpha = 0.3
-      "#82A3CD99",  # #82A3CD, alpha = 0.6
-      "#FF8C00CC",  # darkorange, alpha = 0.6
-      "#8B0000E6",  # darkred, alpha = 0.9
-      "#000000E6"   # black, alpha = 0.9
-    ),  
-    trans = "sqrt",  # Same as in viridis
-    limits = c(0.00, 3),  # Set the limits manually
-    na.value = "black"  # Handling NA values
-  ) +
-  annotation_scale(location = "bl", width_hint = 0.5) + 
-  annotation_north_arrow(location = "bl", which_north = "true", pad_x = unit(0, "in"), pad_y = unit(0.5, "in"), style = north_arrow_fancy_orienteering) + 
-  coord_sf(xlim = c(7.5, 13), ylim = c(54.5, 58), expand = FALSE) + 
-  xlab("Longitude") + 
-  ylab("Latitude") + 
-  theme(panel.grid.major = element_line(color = gray(.5), linetype = "dashed", linewidth = 0.5), 
-        panel.background = element_rect(fill = "aliceblue"),
-        axis.title = element_blank(),
-        legend.position = c(0.9, 0.86),
-        legend.title=element_text(size=12),
-        legend.background = element_blank())
-
-map_m_MAG7_filt

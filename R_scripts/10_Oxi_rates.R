@@ -1,8 +1,8 @@
 # Script for importing and displaying GC-MS for the 13CH4 incubations
 # Kalinka Sand Knudsen
 
-.libPaths(c("/home/bio.aau.dk/vj52ou/software/R_packages.v.4.3.2", .libPaths()))
-setwd("~/scripts/MFD/methanotrophs/R_scripts/output/")
+setwd("path/to/your/repo/MFD_methanotrophs_DK/")
+
 
 library(tidyverse)
 library(vroom)
@@ -11,7 +11,7 @@ library(readxl)
 library(lubridate)
 
 # Path to your Excel file
-excel_file <- "../dataframes/all_raw_data.xlsx"
+excel_file <- "data/oxi_rate_raw_data.xlsx"
 
 # Get all sheet names
 sheet_names <- excel_sheets(excel_file)
@@ -20,6 +20,8 @@ sheet_names <- excel_sheets(excel_file)
 df_all <- map_df(sheet_names, ~ read_excel(excel_file, sheet = .x) %>%
                    mutate(sheet_name = .x))  # optional: track origin
 
+# Filter out failed injections, standardize a calibration Type, parse injection timestamps,
+# and compute `oxi_time` (minutes since first injection per `sample_id`).
 df_all <- df_all %>%
   filter(!`Injection Name`=="7_fail")%>%
   mutate(Type=if_else(Type=="Unknown" & `Injection Name`=="2_5 ppm CH4 CO H2", "Calibration_check", Type))%>%
@@ -33,25 +35,30 @@ df_all <- df_all %>%
   ) %>%
   ungroup()
 
-sample_link<-readxl::read_excel("../dataframes/Sample_linkage_mass.xlsx")%>%
+
+# Read sample metadata / linkage table and join to `df_all` to attach dates, masses, etc.
+sample_link<-readxl::read_excel("data/Sample_linkage_mass.xlsx")%>%
   mutate(sample_id=as.character(sample_id))%>%mutate(Date=as.Date(Date))%>%filter(!Date=="2025-04-22")%>%distinct()
 
+# Left-join sample metadata and set `oxi_time` to NA for calibration standards
 df_all<-df_all%>%left_join(sample_link)%>%mutate(oxi_time=if_else(Type=="Calibration Standard", NA, oxi_time))
 
 
+
+# Quick check plot: CH4 concentration over time per `sample_id`
 df_all%>%filter(Component=="CH4 [FID]")%>%
   ggplot(., aes(x = oxi_time, y = Amount, colour=sample_id)) +
   geom_line() + # Use geom_line() for a line plot
   labs(title = "CH4 Concentration Over Time",
-       x = "Date and Time",
-       y = "CH4 [ppm]") +
+    x = "Date and Time",
+    y = "CH4 [ppm]") +
   theme_minimal()
 
 
 
 
 ############### Okay the data is now looking fine ###################
-## Next up, I mean to 1) plot the data as point for Methylocella only and 2) calculate the rate using 1. order kinetics 
+## Next up,  1) plot the data as point for Methylocella only and 2) calculate the rate using 1. order kinetics 
 
 my_pub_theme <- theme_classic() +
   theme(
@@ -314,14 +321,14 @@ for (loc in locations) {
 library(patchwork)
 plot_comb<-location_plots[["Fussingø"]] + location_plots[["Silkeborg"]]
 
-# ggsave("oxi_rates/Fussingø_Silkeborg.svg",
+# ggsave("output/Fussingø_Silkeborg.svg",
 #        plot_comb,
 #        units = c("mm"),
 #        height = 70,
 #        width = 183,
 #        dpi=300)
 # 
-# ggsave("oxi_rates/Fussingø_Silkeborg_25_10_30.svg",
+# ggsave("output/Fussingø_Silkeborg_25_10_30.svg",
 #        plot_comb,
 #        units = c("mm"),
 #        height = 60,
@@ -366,14 +373,14 @@ for (loc in locations) {
 
 plot_comb<-location_plots[["Dokkedal"]] 
 
-# ggsave("oxi_rates/Dokkedal.png",
+# ggsave("output/Dokkedal.png",
 #        plot_comb,
 #        units = c("mm"),
 #        height = 70,
 #        width = 80,
 #        dpi=300)
 # 
-# ggsave("oxi_rates/Dokkedal.svg",
+# ggsave("output/Dokkedal.svg",
 #        plot_comb,
 #        units = c("mm"),
 #        height = 70,
@@ -389,9 +396,7 @@ plot_comb<-location_plots[["Dokkedal"]]
 ###############################################################################
 
 # Path to your Excel file
-excel_file <- "../dataframes/CG_pressure_method.xlsx"
-
-# Get all sheet names
+excel_file <- "data/CG_pressure_method.xlsx"
 sheet_names <- excel_sheets(excel_file)
 
 pressure_temp <- readxl::read_excel(excel_file, sheet = "Ark1",
@@ -462,7 +467,8 @@ PVT_to_n <- function(P_bar, V_m3, Temp_K) { (P_bar * bar_to_Pa) * V_m3 / (R * Te
 
 nVT_to_Pbar <- function(n_mol, V_m3, Temp_K) { (n_mol * R * Temp_K / V_m3) / bar_to_Pa }
 
-# Prepare data: ensure numeric columns, order per sample_id, and create idx per group
+# Prepare grouped data for reconstruction: compute Temp_K, index per injection,
+# and compute measured n at start/end when pressures are available
 dat_grouped <- df_ch4_pressure %>%
   mutate(Temp_K = Temp + 273.15) %>%
   group_by(sample_id) %>%
@@ -635,8 +641,8 @@ print(summary_by_sample, n = Inf)
 print(worst_rows, n = Inf)
 
 ### So, the max difference between begin and end is 0.018 bar. This is quite ok I think.
-# Now, I will take the mean between the two methods in cases where it is possible, or just use the one point in samples 4 and 5:
-
+# Combine forward/backward reconstructions: use the mean when both estimates exist,
+# otherwise use the single available estimate (used to compute CH4 moles below).
 final_combined <- final %>%
   mutate(
     # combined mole count: mean when both present, otherwise the one that exists
@@ -669,6 +675,9 @@ print(final_combined %>% select(sample_id, idx, `Injection Name`, oxi_time,
       n = Inf)
 
 
+
+# Compute CH4 molecule counts per injection using combined headspace n, convert to µmol,
+# and compute natural log for linear fitting
 df_ch4_moles <- df_ch4 %>%
   left_join(final_combined, by = c("sample_id", "oxi_time", "Injection Name")) %>%
   mutate(
@@ -690,6 +699,8 @@ PVT_to_n <- function(P_bar, V_m3, Temp_K) { (P_bar * bar_to_Pa) * V_m3 / (R * Te
 C0_mol_ch4 <- (atm_ch4/1e6)*PVT_to_n(Pressure_bar_atm, V_head_m3, Temp_atm_K)
 C0_µmol_ch4 <-C0_mol_ch4*1e6 
 
+
+# Per-sample log-linear fit of ln(n_CH4[µmol]) versus time to extract first-order rate k
 df_slopes <- df_ch4_moles %>%
   group_by(sample_id) %>%
   summarise(
@@ -714,6 +725,7 @@ df_slopes <- df_ch4_moles %>%
 
 
 ############# Now to plotting ################
+# Build plotmath legend labels per sample_id using k, r_soil and R^2 (used in ggplot legends)
 legend_labels_rates <- setNames(
   lapply(1:nrow(df_slopes), function(i) {
     k_val <- round(df_slopes$k_hour[i], 3)
@@ -833,16 +845,6 @@ for (loc in locations) {
 }
 
 
-# plot_comb<-location_plots[["Fussingø"]] + location_plots[["Silkeborg"]]
-# ggsave("oxi_rates/Fussingø_Silkeborg_rates_25_12_03.svg",
-#        plot_comb,
-#        units = c("mm"),
-#        height = 60,
-#        width = 160,
-#        dpi=300)
-
-
-
 
 for (loc in locations) {
   df_data_loc <- df_data_all %>% filter(location == loc)
@@ -901,6 +903,7 @@ ggsave("oxi_rates/Dokkedal_rates.svg",
 
 
 ################## Combining them #######################
+# Subset curves/data for the two locations to be combined in a single panel
 df_curve_capsa<-df_curve_all%>%filter(location %in% c("Fussingø", "Silkeborg"))
 df_all_capsa<-df_data_all%>%filter(location %in% c("Fussingø", "Silkeborg"))
 
@@ -954,6 +957,7 @@ df_ctrl_label <- df_ch4_neg %>%
   slice_max(order_by = oxi_time, n = 1, with_ties = FALSE) %>%
   mutate(sample_id = "Neg control")   # label text
 
+# Join labels for remapped sample names (e.g., F1, F2, S1...) used for plotting
 df_slopes2<-df_slopes%>%
   left_join(df_curve_labels)%>%
   filter(!is.na(sample_id_v2))
@@ -1056,14 +1060,14 @@ p <- ggplot() +
 p
 
 # 
-# ggsave("oxi_rates/combined_oxi.png",
+# ggsave("output/combined_oxi.png",
 #        p,
 #        units = c("mm"),
 #        height = 80,
 #        width = 180,
 #        dpi=300)
 # # 
-# ggsave("oxi_rates/combined_oxi.svg",
+# ggsave("output/combined_oxi.svg",
 #        p,
 #        units = c("mm"),
 #        height = 80,
@@ -1074,7 +1078,7 @@ p
 
 
 
-############################################ testing """""""""""""""""""""""""""
+####### Adding table next to plot ##############
 library(dplyr)
 library(ggplot2)
 library(gridExtra)
@@ -1147,14 +1151,14 @@ final <- plot_grid(
 
 print(final)
 
-ggsave("oxi_rates/combined_oxi_15C.png",
+ggsave("output/combined_oxi_15C.png",
        final,
        units = c("mm"),
        height = 80,
        width = 183,
        dpi=300)
 # 
-ggsave("oxi_rates/combined_oxi_15C_26_01_20.svg",
+ggsave("output/combined_oxi_15C_26_01_20.svg",
        final,
        units = c("mm"),
        height = 80,
@@ -1167,9 +1171,7 @@ ggsave("oxi_rates/combined_oxi_15C_26_01_20.svg",
 ############################# less wide no legend ##########################
 
 
-
-
-ggsave("oxi_rates/combined_oxi_25_12_08.svg",
+ggsave("output/combined_oxi_25_12_08.svg",
        p_no_legend,
        units = c("mm"),
        height = 60,
