@@ -33,7 +33,7 @@ names(methane_colors)[names(methane_colors) == "-"] <- "Formate oxidation"
 ## ---- Load and standardize KO metadata (gene labels, pathways) ----
 # KO_KSK_25_08_12.xlsx: KEGG Orthology metadata with pathway mappings and gene names
 # Create abbreviated pathway names and gene labels for heatmap visualization; split Metabolic_step for multi-line facet labels
-KOs<-read_excel("KO_KSK_25_08_12.xlsx") %>%
+KOs<-read_excel("data/KO_KSK_methanotroph_paper.xlsx") %>%
   mutate (Pathway = gsub ("Formaldehyde oxidation" , "Form.ald.oxi.", Pathway))%>%
   mutate (Pathway = gsub ("Formaldehyde assim. H4F" , "Form.ald. assim. H4F", Pathway))%>%
   mutate (Pathway = gsub ("Methane oxidation" , "Methane oxi.", Pathway))%>%

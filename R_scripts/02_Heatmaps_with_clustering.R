@@ -269,7 +269,7 @@ hab2_sort<-OTU_filtered_long%>%
 hab2_sort_order<-hab2_sort%>%
   select(mfd_hab2)%>%distinct()%>%
   pull(mfd_hab2)
-#saveRDS(hab2_sort_order, "hab2_sort_order.rds")
+saveRDS(hab2_sort_order, "output/hab2_sort_order.rds")
 
 palette_mfd_hab2<-readRDS("./palette_mfd_hab2.rds")
 
@@ -1038,7 +1038,7 @@ combined_plot <- heat / bar_plot + patchwork::plot_layout(heights = c(20, 0.5)) 
 
 combined_plot
 
-ggsave("./fields_hab2.png",
+ggsave("output/fields_hab2.png",
        combined_plot,
        height = 10,
        width = 15,
