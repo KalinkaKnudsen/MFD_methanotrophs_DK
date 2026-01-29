@@ -1,7 +1,7 @@
 #*.tsv
 #*combined_count_table.txt
 #*.zip
-#*.xlsx
+*.xlsx
 #*.R
 #*.csv
 #*.rds
