@@ -6,12 +6,9 @@ Supplementary Data File 5: KO_KSK_methanotroph_paper.xlsx. A list of KEGG Orthol
 Supplementary Data File 6: Metabolism_DRAM.7z. Functional annotation of methanotrophs. DRAM functional annotation output for methanotrophs described in this study. 
 
 
-
-See: https://github.com/Serka-M/MFD-LR/tree/main for download of MAGs
-
+See: https://github.com/Serka-M/MFD-LR/tree/main for download of LR MAGs
 See: https://www.nature.com/articles/s41586-025-09794-2#data-availability for download of metagenomic samples 
 
 All are available at Zenodo: https://zenodo.org/records/17162544
-
 
 Unzip accessory files needed to generate plots (species cluster, phylogenomic trees and more)
