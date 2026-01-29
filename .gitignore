@@ -1,7 +1,7 @@
 #*.tsv
 #*combined_count_table.txt
 #*.zip
-*.xlsx
+data\2025-02-19_mfd_db.xlsx
 #*.R
 #*.csv
 #*.rds
