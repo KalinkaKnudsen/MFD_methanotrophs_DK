@@ -2,7 +2,7 @@ Supplementary Data File 1: Oxi_rate_mmlong2_bins.tsv. MAG statistics for oxidati
 
 Supplementary Data File 2: methanotroph_IDs.tsv. Microflora Danica MAGs analysed here for methanotrophy.
 
-Supplementary Data File 3: Protologue table for proposed names for selected microbial lineages
+Supplementary Data File 3: Protologue_table_methanotrophs.xlsx. Protologue table for proposed names for selected microbial lineages
 
 Supplementary Data File 4: GraftM_output.zip. Output of pmoA and mmoX GraftM packages.
 
