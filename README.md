@@ -1,5 +1,5 @@
 # MFD_methanotrophs_DK
-Scripts for analysis and plotting for the paper "Exploring the methane sink potential of Denmark's microbiome"
+Scripts for analysis and plotting for the paper "A national baseline for methane sink habitats and methanotroph diversity"
 
 Extended Data Files can be found in the data folder
 
