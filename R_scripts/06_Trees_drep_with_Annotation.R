@@ -445,14 +445,14 @@ ggsave("./output/Rhodo_Sylph_bar_25_11_10.svg",combined_plot,
 
 #################################################################################################
 #################################################################################################
-######################      From here, we are working with Methylocella      ####################
+######################      From here, we are working with Methylocapsa      ####################
 #################################################################################################
 #################################################################################################
 
 
 
-# ===== METHYLOCELLA LINEAGE SECTION =====
-# Filter taxonomy to Methylocella genus and extract tip labels
+# ===== Methylocapsa lineage section =====
+# Filter taxonomy to Methylocella genus and extract tip labels (Methylocapsa)
 
 outgroup_tips <- tax %>%
   filter(Genus=="g__Methylocella")%>%
