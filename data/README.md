@@ -8,7 +8,7 @@ Supplementary Data File 4: GraftM_output.zip. Output of pmoA and mmoX GraftM pac
 
 Supplementary Data File 5: KO_KSK_methanotroph_paper.xlsx. A list of KEGG Orthology (KO) identifiers used to perform functional annotation.
 
-Supplementary Data File 6: Metabolism_DRAM.7z. Functional annotation of methanotrophs. DRAM functional annotation output for methanotrophs described in this study. 
+Supplementary Data File 6: DRAM_tidy.zip. Functional annotation of methanotrophs. DRAM functional annotation output for methanotrophs described in this study. 
 
 
 
