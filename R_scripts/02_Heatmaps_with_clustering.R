@@ -2,10 +2,6 @@
 
 # 02_Heatmaps_with_clustering.R
 # Purpose: generate heatmaps of gene abundance (RPKM) across samples,
-#          cluster samples within habitat groups, and export publication-ready
-#          figures and legends used in the ISME presentation.
-# Usage: set working directory to repository root (or edit the `setwd()` below)
-# Dependencies: ggplot2, cowplot, vroom, tidyverse, readxl, patchwork, vegan, ggrastr, ggpubr, rstatix
 
 library(ggplot2)
 library(cowplot)
