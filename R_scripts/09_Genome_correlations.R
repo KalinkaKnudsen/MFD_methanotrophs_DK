@@ -335,7 +335,7 @@ jaccard_with_fisher <- function(list1, list2) {
   fisher_greater   <- fisher.test(contingency, alternative = "greater")$p.value
   fisher_less      <- fisher.test(contingency, alternative = "less")$p.value
   
-  # Return tidy tibble with all counts as separate columns
+
   tibble(
     similarity = similarity,
     distance = distance,
@@ -363,13 +363,13 @@ for (hab in habitats) {
   subset_df <- df %>% filter(mfd_hab1 == hab)
   mat <- subset_df[, species_cols]
   
-  # Unique unordered pairs
+
   combs <- combn(species_cols, 2, simplify = FALSE)
   
   for (pair in combs) {
     res <- jaccard_with_fisher(mat[[pair[1]]], mat[[pair[2]]])
     
-    # Add metadata
+
     res$species1 <- pair[1]
     res$species2 <- pair[2]
     res$mfd_hab1 <- hab

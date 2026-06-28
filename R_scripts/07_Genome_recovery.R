@@ -165,12 +165,12 @@ ggsave(p_savephyl_fam_annot, filename = './output/Genome_recovery_24_10_29.png',
 genus_summary <- tax_unique %>%
   group_by(Genus) %>%
   summarize(
-    added_genomes = sum(hit == "yes", na.rm = TRUE),   # Number of genomes being added
-    gtdb_genomes = sum(type == "GTDB", na.rm = TRUE),  # Number of GTDB genomes per genus
-    total_genomes = n()                                # Total number of genomes per genus
+    added_genomes = sum(hit == "yes", na.rm = TRUE),   
+    gtdb_genomes = sum(type == "GTDB", na.rm = TRUE),  
+    total_genomes = n()                                
   ) %>%
   mutate(
-    percent_increase = round((added_genomes / (gtdb_genomes + added_genomes)) * 100, 0) # Percent increase
+    percent_increase = round((added_genomes / (gtdb_genomes + added_genomes)) * 100, 0) 
   ) %>%
   ungroup()
 
@@ -313,7 +313,6 @@ p2<-df%>%
 #scale_y_break(c(50, 100))
 # scale_y_cut(breaks=c(5, 50), which=c(1,2,3), scales=c(1,1,3), space=.1)
 
-# First, recreate the plot but with legend visible
 p2_legend <- p2 +
   geom_bar_pattern(
     stat = "identity",

@@ -1,13 +1,15 @@
-#!/usr/bin/env Rscript
-
 ########## Not needed to run, just documentation #############
+
+
+
+
+
 #### Obs, sylph file too large for git repo, can be found at Zenodo repo ####
 ### parsing of output from Sylph genome quantification with GTDB taxonomy ###
 ## The output file sylph_gtdb_25_03_06 (uploaded to data folder) can be used directly for plotting genome-level abundances
 
 library(ggplot2)
 
-#!/usr/bin/env Rscript
 
 ## 03_Sylph_gtdb.R
 ## Purpose: link Sylph genome quantification output with GTDB taxonomy,
@@ -36,19 +38,12 @@ tax_filter<-vroom("data/taxonomy_filter_r220.txt", delim = "\t", col_names = "ta
 tax<-readRDS("data/MFD_renamed_tax_25_03_04.rds")
 
 
-## Identify taxa with name conflicts (duplicate Species entries) to resolve later
 tax_issues<-tax%>%group_by(Species)%>%
   summarise(count = n())%>%
   ungroup()
 
 resolved<-tax%>%left_join(tax_issues)%>%filter(count>1)
 resolved2<-tax%>%left_join(tax_issues)%>%mutate(user_genome=as.character(user_genome))%>%filter(count>2)%>%pull(user_genome)
-
-## Build trial tax sets: prefer MAG representatives where duplicates exist
-tax_try<-tax%>%filter(!user_genome %in% resolved$user_genome)
-tax_try2<-tax%>%filter(user_genome %in% resolved$user_genome)%>%
-  filter(MAG_Flag=="MAG_")%>%rbind(tax_try)%>%
-  filter(!str_detect(user_genome, str_c(resolved2, collapse = "|")))
 
 
 ## ---- Read Sylph GTDB quantification table and subset to taxa of interest ----

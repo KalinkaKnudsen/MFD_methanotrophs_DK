@@ -179,9 +179,9 @@ map_m_silviterra <- ggplot(data = world) +
       "#8B0000E6",  # darkred, alpha = 0.9
       "#000000E6"   # black, alpha = 0.9
     ),  
-    trans = "sqrt",  # Same as in viridis
-    limits = c(0.00, 3),  # Set the limits manually
-    na.value = "black"  # Handling NA values
+    trans = "sqrt",  
+    limits = c(0.00, 3),  
+    na.value = "black"  
   ) +
   annotation_scale(location = "bl", width_hint = 0.5) + 
   annotation_north_arrow(location = "bl", which_north = "true", pad_x = unit(0, "in"), pad_y = unit(0.5, "in"), style = north_arrow_fancy_orienteering) + 
@@ -235,9 +235,9 @@ map_m_silviterra_urban <- ggplot(data = world) +
       "#8B0000E6",  # darkred, alpha = 0.9
       "#000000E6"   # black, alpha = 0.9
     ),  
-    trans = "sqrt",  # Same as in viridis
-    limits = c(0.00, 3),  # Set the limits manually
-    na.value = "black"  # Handling NA values
+    trans = "sqrt",  
+    limits = c(0.00, 3),  
+    na.value = "black"  
   ) +
   annotation_scale(location = "bl", width_hint = 0.5) + 
   annotation_north_arrow(location = "bl", which_north = "true", pad_x = unit(0, "in"), pad_y = unit(0.5, "in"), style = north_arrow_fancy_orienteering) + 
@@ -291,9 +291,9 @@ map_m_rosea_urban <- ggplot(data = world) +
       "#8B0000E6",  # darkred, alpha = 0.9
       "#000000E6"   # black, alpha = 0.9
     ),  
-    trans = "sqrt",  # Same as in viridis
-    limits = c(0.00, 3),  # Set the limits manually
-    na.value = "black"  # Handling NA values
+    trans = "sqrt", 
+    limits = c(0.00, 3),  
+    na.value = "black"  
   ) +
   annotation_scale(location = "bl", width_hint = 0.5) + 
   annotation_north_arrow(location = "bl", which_north = "true", pad_x = unit(0, "in"), pad_y = unit(0.5, "in"), style = north_arrow_fancy_orienteering) + 
@@ -337,9 +337,9 @@ map_m_MAG14_urban <- ggplot(data = world) +
       "#8B0000E6",  # darkred, alpha = 0.9
       "#000000E6"   # black, alpha = 0.9
     ),  
-    trans = "sqrt",  # Same as in viridis
-    limits = c(0.00, 3),  # Set the limits manually
-    na.value = "black"  # Handling NA values
+    trans = "sqrt",  
+    limits = c(0.00, 3),  
+    na.value = "black"  
   ) +
   annotation_scale(location = "bl", width_hint = 0.5) + 
   annotation_north_arrow(location = "bl", which_north = "true", pad_x = unit(0, "in"), pad_y = unit(0.5, "in"), style = north_arrow_fancy_orienteering) + 
@@ -392,9 +392,9 @@ map_m_silviterra_urban <- ggplot(data = world) +
       "#8B0000E6",  # darkred, alpha = 0.9
       "#000000E6"   # black, alpha = 0.9
     ),  
-    trans = "sqrt",  # Same as in viridis
-    limits = c(0.00, 3),  # Set the limits manually
-    na.value = "black"  # Handling NA values
+    trans = "sqrt",  
+    limits = c(0.00, 3),
+    na.value = "black"  
   ) +
   # annotation_scale(location = "bl", width_hint = 0.5, height = unit(0.08, "cm"), line_width = 0.3, text_cex = 0.5) + 
   # annotation_north_arrow(location = "bl", which_north = "true", pad_x = unit(0, "cm"), pad_y = unit(0.5, "cm"), style = north_arrow_fancy_orienteering(text_size = 5, line_width = 0.4),
@@ -461,13 +461,11 @@ map_m_rosea_urban <- ggplot(data = world) +
       "#8B0000E6",  # darkred, alpha = 0.9
       "#000000E6"   # black, alpha = 0.9
     ),  
-    trans = "sqrt",  # Same as in viridis
-    limits = c(0.00, 3),  # Set the limits manually
-    na.value = "black"  # Handling NA values
+    trans = "sqrt",  
+    limits = c(0.00, 3), 
+    na.value = "black"  
   ) +
-  # annotation_scale(location = "bl", width_hint = 0.5, height = unit(0.08, "cm"), line_width = 0.3, text_cex = 0.5) + 
-  # annotation_north_arrow(location = "bl", which_north = "true", pad_x = unit(0, "cm"), pad_y = unit(0.4, "cm"), style = north_arrow_fancy_orienteering(text_size = 6, line_width = 0.5),
-  #                        height = unit(0.8, "cm"), width = unit(0.8, "cm")) + 
+
   coord_sf(xlim = c(7.8, 13.15), ylim = c(54.5, 58), expand = FALSE) + 
   xlab("Longitude") + 
   ylab("Latitude") + 
@@ -517,9 +515,9 @@ map_m_MAG14_urban <- ggplot(data = world) +
       "#8B0000E6",  # darkred, alpha = 0.9
       "#000000E6"   # black, alpha = 0.9
     ),  
-    trans = "sqrt",  # Same as in viridis
-    limits = c(0.00, 3),  # Set the limits manually
-    na.value = "black"  # Handling NA values
+    trans = "sqrt", 
+    limits = c(0.00, 3), 
+    na.value = "black"  
   ) +
   # annotation_scale(location = "bl", width_hint = 0.5, height = unit(0.08, "cm"), line_width = 0.3, text_cex = 0.5) + 
   # annotation_north_arrow(location = "bl", which_north = "true", pad_x = unit(0, "cm"), pad_y = unit(0.4, "cm"), style = north_arrow_fancy_orienteering(text_size = 6, line_width = 0.5),

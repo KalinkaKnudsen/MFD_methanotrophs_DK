@@ -2,9 +2,7 @@
 ## ============================================================================
 ## 06_Trees_qual_filt_80_with_Annotation.R
 ## Purpose: Create phylogenetic trees of quality-filtered (≥80% completeness)
-##          methanotroph genomes with metabolic annotations and quantification 
-##          overlays. Produces multi-panel phylogenetic visualizations for
-##          major lineages with bootstrap support and metabolic gene presence.
+##          methanotroph genomes 
 ## ============================================================================
 
 
@@ -51,8 +49,6 @@ MFD_renamed<-readRDS("data/MFD_renamed_tax_25_03_04.rds")%>%
 drep<-vroom("data/mfd_all_drep_reps.tsv")%>%
   rename(user_genome=bin)
 
-# ===== TAXONOMY PROCESSING AND LABEL ASSIGNMENT =====
-# Merge taxonomy with MFD labels, assign genome numbers within each genus for disambiguation
 tax2<-left_join(tax, MFD_renamed)%>%
   mutate(label_3=if_else(type=="GTDB", gsub("s__", "", Species), label_3))%>%
   mutate(user_genome = factor(user_genome, levels = order, ordered = TRUE)) %>%
@@ -113,13 +109,12 @@ KEGG_sort<-KEGG%>%
 KEGG<-KEGG%>%
   mutate (gene_label = paste0(Gene_collapsed , ' ',  Pathway_step))
 
-# ===== RHODOMICROBIUM LINEAGE SECTION =====
-# Filter taxonomy to Rhodomicrobium genus and extract tip labels for tree subsetting
+
 #################################################################################################
 ###################### From here, we are working with Rhodomicrobium ############################
 #################################################################################################
 
-# Identify the tip labels corresponding to the outgroup sequences
+
 outgroup_tips <- tax %>%
   filter(Genus=="g__Rhodomicrobium")%>%
   pull(user_genome)
@@ -187,8 +182,8 @@ Rhodo_plot <- Rhodo_plot %<+% df_boot + geom_nodepoint(aes(color=status), size=0
     title = "Genome origin:",
     title.theme = element_text(size=5),
     label.theme = element_text(size=5),
-    keyheight = unit(0.1, "cm"),  # Adjust as needed
-    keywidth = unit(0.1, "cm"),   # Adjust as needed
+    keyheight = unit(0.1, "cm"),  
+    keywidth = unit(0.1, "cm"),   
     override.aes = list(size = 1.2)
   ))+
   theme(legend.position = c(0.2, 0.7),
@@ -198,8 +193,8 @@ Rhodo_plot <- Rhodo_plot %<+% df_boot + geom_nodepoint(aes(color=status), size=0
     title = "Bootstrap:",
     title.theme = element_text(size=5),
     label.theme = element_text(size=5),
-    keyheight = unit(0.1, "cm"),  # Adjust as needed
-    keywidth = unit(0.1, "cm"),   # Adjust as needed
+    keyheight = unit(0.1, "cm"),  
+    keywidth = unit(0.1, "cm"),   
     override.aes = list(size = 1.2)
   )) 
 
@@ -379,8 +374,8 @@ NS <- KEGG %>%
         strip.clip = "off",
         legend.position = "none",
         legend.key.size = unit(0.2, "cm"),
-        legend.spacing.y = unit(0.07, "cm"),      # space between rows
-        legend.spacing.x = unit(0.07, "cm"),      # space between columns
+        legend.spacing.y = unit(0.07, "cm"),      
+        legend.spacing.x = unit(0.07, "cm"),      
         legend.text = element_text(size=5, margin = margin(l = 0.4)),
         axis.title = element_blank(),
         text = element_text(family = "Arial"),
@@ -478,8 +473,8 @@ Methylocombo_plot <- Methylocombo_plot %<+% df_boot + geom_nodepoint(aes(color=s
     title = "Genome origin:",
     title.theme = element_text(size=5),
     label.theme = element_text(size=5),
-    keyheight = unit(0.1, "cm"),  # Adjust as needed
-    keywidth = unit(0.1, "cm"),   # Adjust as needed
+    keyheight = unit(0.1, "cm"),  
+    keywidth = unit(0.1, "cm"),   
     override.aes = list(size = 1.2)
   ))+
   theme(legend.position = c(0.2, 0.7),
@@ -489,8 +484,8 @@ Methylocombo_plot <- Methylocombo_plot %<+% df_boot + geom_nodepoint(aes(color=s
     title = "Bootstrap:",
     title.theme = element_text(size=5),
     label.theme = element_text(size=5),
-    keyheight = unit(0.1, "cm"),  # Adjust as needed
-    keywidth = unit(0.1, "cm"),   # Adjust as needed
+    keyheight = unit(0.1, "cm"),  
+    keywidth = unit(0.1, "cm"),   
     override.aes = list(size = 1.2)
   )) 
 
@@ -743,8 +738,8 @@ NS <- KEGG %>%
         strip.clip = "off",
         legend.position = "bottom",
         legend.key.size = unit(0.2, "cm"),
-        legend.spacing.y = unit(0.07, "cm"),      # space between rows
-        legend.spacing.x = unit(0.07, "cm"),      # space between columns
+        legend.spacing.y = unit(0.07, "cm"),      
+        legend.spacing.x = unit(0.07, "cm"),      
         legend.text = element_text(size=5, margin = margin(l = 0.4)),
         axis.title = element_blank(),
         text = element_text(family = "Arial"),
@@ -863,8 +858,8 @@ Gamma_plot <- Gamma_plot %<+% df_boot + geom_nodepoint(aes(color=status), size=0
     title = "Genome origin:",
     title.theme = element_text(size=5),
     label.theme = element_text(size=5),
-    keyheight = unit(0.1, "cm"),  # Adjust as needed
-    keywidth = unit(0.1, "cm"),   # Adjust as needed
+    keyheight = unit(0.1, "cm"),  
+    keywidth = unit(0.1, "cm"),   
     override.aes = list(size = 1.2)
   ))+
   theme(legend.position = c(0.2, 0.7),
@@ -874,8 +869,8 @@ Gamma_plot <- Gamma_plot %<+% df_boot + geom_nodepoint(aes(color=status), size=0
     title = "Bootstrap:",
     title.theme = element_text(size=5),
     label.theme = element_text(size=5),
-    keyheight = unit(0.1, "cm"),  # Adjust as needed
-    keywidth = unit(0.1, "cm"),   # Adjust as needed
+    keyheight = unit(0.1, "cm"),  
+    keywidth = unit(0.1, "cm"),   
     override.aes = list(size = 1.2)
   )) 
 
@@ -934,8 +929,8 @@ pl <- KEGG %>%
         strip.clip = "off",
         legend.position = "none",
         legend.key.size = unit(0.2, "cm"),
-        legend.spacing.y = unit(0.07, "cm"),      # space between rows
-        legend.spacing.x = unit(0.07, "cm"),      # space between columns
+        legend.spacing.y = unit(0.07, "cm"),      
+        legend.spacing.x = unit(0.07, "cm"),      
         legend.text = element_text(size=5, margin = margin(l = 0.4)),
         axis.title = element_blank(),
         text = element_text(family = "Arial"),
@@ -986,8 +981,8 @@ CM <- KEGG %>%
         strip.clip = "off",
         legend.position = "none",
         legend.key.size = unit(0.2, "cm"),
-        legend.spacing.y = unit(0.07, "cm"),      # space between rows
-        legend.spacing.x = unit(0.07, "cm"),      # space between columns
+        legend.spacing.y = unit(0.07, "cm"),      
+        legend.spacing.x = unit(0.07, "cm"),      
         legend.text = element_text(size=5, margin = margin(l = 0.4)),
         axis.title = element_blank(),
         text = element_text(family = "Arial"),
@@ -1086,8 +1081,8 @@ NS <- KEGG %>%
         strip.clip = "off",
         legend.position = "bottom",
         legend.key.size = unit(0.2, "cm"),
-        legend.spacing.y = unit(0.07, "cm"),      # space between rows
-        legend.spacing.x = unit(0.07, "cm"),      # space between columns
+        legend.spacing.y = unit(0.07, "cm"),      
+        legend.spacing.x = unit(0.07, "cm"),      
         legend.text = element_text(size=5, margin = margin(l = 0.4)),
         axis.title = element_blank(),
         text = element_text(family = "Arial"),

@@ -20,8 +20,8 @@ setwd("path/to/your/repo/MFD_methanotrophs_DK/")
 ## ---- Load sample metadata ----
 ## `habitat` contains MFD ontology metadata; `seq_meta` holds sequencing stats.
 ## Create `SeqId` from `flat_name` and merge to form `com_meta` used below.
-habitat <-read_excel("data/2025-02-19_mfd_db.xlsx")
-seq_meta <- vroom("data/2023-10-11_samples_minimal_metadata_collapsed.csv", delim = ",") %>%
+habitat <-read_excel("metadata/S7_2025-02-19_mfd_db.xlsx")
+seq_meta <- vroom("metadata/S8_2023-10-11_samples_minimal_metadata_collapsed.csv", delim = ",") %>%
   mutate(flat_name=gsub(".fastq.gz","", flat_name))%>%
   rename(SeqId = flat_name) %>%
   relocate(SeqId)
@@ -31,15 +31,14 @@ com_meta<-merge(seq_meta, habitat, by="fieldsample_barcode")%>%
 
 
 ## ---- Load and prepare mmoX counts ----
-## Read the mmoX combined count table and rename the lineage column to `OTU`.
-## Use a gene-specific Root label to avoid conflicts between gene tables.
+## Need to unzip GraftM_output.zip
 mmoX <- vroom("data/mmoX_combined_count_table_e10.txt", delim = "\t") %>%
 rename(OTU = ConsensusLineage)  %>%
 mutate(OTU = if_else(OTU == "Root", "Root_mmoX", OTU))
 
 
 mmoX_scale<-com_meta%>%
-  ## per_million_scale: convert to counts-per-million (accounting for paired reads)
+  ## per_million_scale: convert to counts-per-million (accounting for paired reads, using only R1 and thus devide by 2)
   mutate(per_million_scale=(after_total_reads/2)/1000000)%>%
   ## kb_length: approximate gene length in kilobases (aa length * 3 nt / 1000)
   mutate(kb_length=(527*3)/1000)%>% #length of search mmoX = 527 aa
@@ -69,6 +68,7 @@ scaled_otu_table_mmoX <- merged_df_mmoX %>%
 
 ##### Loading the pmoA data #####
 ## Mirror of the mmoX workflow: load pmoA counts and prepare for scaling.
+## Need to unzip GraftM_output.zip
 pmoA <- vroom("data/pmoA_combined_count_table_e10.txt", delim = "\t") %>%
   rename(OTU = ConsensusLineage)  %>%
   mutate(OTU = if_else(OTU == "Root", "Root_pmoA", OTU))

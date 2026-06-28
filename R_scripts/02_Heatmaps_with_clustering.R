@@ -22,8 +22,9 @@ setwd("path/to/your/repo/MFD_methanotrophs_DK/")
 
 
 ## Load color palettes and pre-processed OTU table (long format)
+### OBS, color palette is located in the accessory files, and must be unzipped for use
 p_combine<-readRDS("data/palette_mfd_hab2_ISME.rds") 
-OTU_filtered_long<-readRDS("output/OTU_filtered_long_25_09_01.rds")
+OTU_filtered_long<-readRDS("output/OTU_filtered_long_25_09_01.rds") ## Generated in 01_scale_OTU.R, contains RPKM values and curated taxonomy for plotting
 
 
 
@@ -123,6 +124,7 @@ prevalence_by_habitat <- Methylococcaceae_presence %>%
 
 
 ## Create a wide OTU matrix (rows = SeqId, cols = Tax) and drop rows with all zeros
+
 OTU_wide<-OTU_filtered_long%>%
   pivot_wider(names_from = Tax, values_from = RPKM, id_cols = c(SeqId))%>% ##Change to tax curated once possible
   as.data.frame(.)%>%
@@ -133,54 +135,55 @@ row.names(OTU_sums)<-OTU_wide$SeqId
 groups<-unique(OTU_filtered_long$complex_long)
 
 
-# Cluster samples within each `mfd_hab2` group to derive a sample ordering
-# The loop computes a Bray-Curtis distance, hierarchical clustering (ward.D2),
-# and saves the ordered sample labels as `levels_gr_<n>` for each group.
-groups2<-unique(OTU_filtered_long$mfd_hab2)
+#length(groups2)
+#Trying to plot with the clustering of MFD_hab02
+#Cluster individually
+
+
+groups2 <- unique(OTU_filtered_long$mfd_hab2)
 
 for (i in seq_along(groups2)) {
-  # Use paste0 to dynamically create variable names gr_1, gr_2, etc.
+  
   gr_name <- paste0("gr_", i)
   
-  # Use the filter condition to select the current group
   current_group <- OTU_filtered_long %>%
     filter(mfd_hab2 %in% groups2[i]) %>%
-    pivot_wider(names_from = Tax, values_from = RPKM, id_cols = c(SeqId)) %>% ## Change to tax curated
-    as.data.frame(.) %>%
-    filter(rowSums(select(., -1)) > 0)
+    pivot_wider(names_from = Tax, values_from = RPKM, id_cols = SeqId) %>%
+    as.data.frame(.)
   
-  # Assign the result to the dynamically named variable
-  assign(gr_name, current_group)
+  nonzero <- current_group %>%
+    filter(rowSums(select(., -SeqId)) > 0)
   
-  # Continue with the rest of your code using the dynamic variable name
-  OTU_sums <- get(gr_name)[,-1]
-  row.names(OTU_sums) <- get(gr_name)$SeqId
+  zero_ids <- setdiff(current_group$SeqId, nonzero$SeqId)
   
-  bray_curtis_dist <- vegan::vegdist(vegan::decostand(OTU_sums, method = "hellinger"))
-  hclust_ward <- hclust(bray_curtis_dist, method = "ward.D2")
-  ward_dendrogram <- as.dendrogram(hclust_ward)
-  ward_order <- order.dendrogram(ward_dendrogram)
-  assign(paste0("levels_", gr_name), hclust_ward$labels[order.dendrogram(ward_dendrogram)])
+  # --- CASE 1: 2 or more non-zero SeqIds ---
+  if (nrow(nonzero) >= 2) {
+    
+    OTU_sums <- nonzero[,-1]
+    row.names(OTU_sums) <- nonzero$SeqId
+    
+    bray_curtis_dist <- vegan::vegdist(vegan::decostand(OTU_sums, method = "hellinger"))
+    hclust_ward <- hclust(bray_curtis_dist, method = "ward.D2")
+    ward_order <- hclust_ward$labels[order.dendrogram(as.dendrogram(hclust_ward))]
+    
+    levels_gr_i <- c(ward_order, zero_ids)
+    
+    # --- CASE 2: exactly 1 non-zero SeqId ---
+  } else if (nrow(nonzero) == 1) {
+    
+    levels_gr_i <- c(nonzero$SeqId, zero_ids)
+    
+    # --- CASE 3: zero non-zero SeqIds ---
+  } else {
+    
+    levels_gr_i <- current_group$SeqId
+  }
   
-  
-  # OTU_filtered_long<-OTU_filtered_long%>%
-  #   mutate(mfd_hab2=factor(mfd_hab2, levels = groups2[i]), ordered = TRUE)
-  
+  assign(paste0("levels_", gr_name), levels_gr_i)
 }
 
-levels_hab2 <- c(
-  levels_gr_1, levels_gr_2, levels_gr_3, levels_gr_4, levels_gr_5,
-  levels_gr_6, levels_gr_7, levels_gr_8, levels_gr_9, levels_gr_10,
-  levels_gr_11, levels_gr_12, levels_gr_13, levels_gr_14, levels_gr_15,
-  levels_gr_16, levels_gr_17, levels_gr_18, levels_gr_19, levels_gr_20,
-  levels_gr_21, levels_gr_22, levels_gr_23, levels_gr_24, levels_gr_25,
-  levels_gr_26, levels_gr_27, levels_gr_28, levels_gr_29, levels_gr_30,
-  levels_gr_31, levels_gr_32, levels_gr_33, levels_gr_34, levels_gr_35,
-  levels_gr_36, levels_gr_37, levels_gr_38, levels_gr_39, levels_gr_40,
-  levels_gr_41, levels_gr_42, levels_gr_43, levels_gr_44, levels_gr_45,
-  levels_gr_46, levels_gr_47, levels_gr_48, levels_gr_49, levels_gr_50,
-  levels_gr_51, levels_gr_52, levels_gr_53, levels_gr_54, levels_gr_55,
-  levels_gr_56, levels_gr_57)
+levels_hab2 <- unique(unlist(mget(paste0("levels_gr_", seq_along(groups2)))))
+
 
 
 
@@ -205,155 +208,139 @@ OTU_filtered_long<-OTU_filtered_long %>%
 
 ################# The re-do this #####################
 
-OTU_wide<-OTU_filtered_long%>%
-  pivot_wider(names_from = Tax, values_from = RPKM, id_cols = c(SeqId))%>% ##Change to tax curated once possible
-  as.data.frame(.)%>%
-  filter(rowSums(select(., -1)) > 0)
-OTU_sums<-OTU_wide[,-1]
-row.names(OTU_sums)<-OTU_wide$SeqId
-groups<-unique(OTU_filtered_long$complex_long)
 
+# ---------------------------------------------------------
+# 0. Build OTU_wide
+# ---------------------------------------------------------
+OTU_wide <- OTU_filtered_long %>%
+  pivot_wider(names_from = Tax, values_from = RPKM, id_cols = SeqId) %>%
+  as.data.frame() %>%
+  filter(rowSums(select(., -SeqId)) > 0)
 
-#length(groups2)
-#Trying to plot with the clustering of MFD_hab02
-#Cluster individually
+OTU_sums <- OTU_wide[,-1]
+row.names(OTU_sums) <- OTU_wide$SeqId
 
-groups2<-unique(OTU_filtered_long$mfd_hab2)
+# ---------------------------------------------------------
+# 1. Extract ORIGINAL habitat order (your correct ordering)
+# ---------------------------------------------------------
+hab2_levels <- OTU_filtered_long %>%
+  arrange(hab1_label) %>%
+  distinct(mfd_hab2) %>%
+  pull(mfd_hab2)
 
+# ---------------------------------------------------------
+# 2. Cluster SeqIds WITHIN each habitat (including zero-SeqIds)
+# ---------------------------------------------------------
+groups2 <- hab2_levels
+levels_list <- vector("list", length(groups2))
 
 for (i in seq_along(groups2)) {
-  # Use paste0 to dynamically create variable names gr_1, gr_2, etc.
-  gr_name <- paste0("gr_", i)
   
-  # Use the filter condition to select the current group
   current_group <- OTU_filtered_long %>%
-    filter(mfd_hab2 %in% groups2[i]) %>%
-    pivot_wider(names_from = Tax, values_from = RPKM, id_cols = c(SeqId)) %>% ## Change to tax curated
-    as.data.frame(.) %>%
-    filter(rowSums(select(., -1)) > 0)
+    filter(mfd_hab2 == groups2[i]) %>%
+    pivot_wider(names_from = Tax, values_from = RPKM, id_cols = SeqId) %>%
+    as.data.frame()
   
-  # Assign the result to the dynamically named variable
-  assign(gr_name, current_group)
+  nonzero <- current_group %>% filter(rowSums(select(., -SeqId)) > 0)
+  zero_ids <- setdiff(current_group$SeqId, nonzero$SeqId)
   
-  # Continue with the rest of your code using the dynamic variable name
-  OTU_sums <- get(gr_name)[,-1]
-  row.names(OTU_sums) <- get(gr_name)$SeqId
-  
-  bray_curtis_dist <- vegan::vegdist(vegan::decostand(OTU_sums, method = "hellinger"))
-  hclust_ward <- hclust(bray_curtis_dist, method = "ward.D2")
-  ward_dendrogram <- as.dendrogram(hclust_ward)
-  ward_order <- order.dendrogram(ward_dendrogram)
-  assign(paste0("levels_", gr_name), hclust_ward$labels[order.dendrogram(ward_dendrogram)])
-  
-  
-  # OTU_filtered_long<-OTU_filtered_long%>%
-  #   mutate(mfd_hab2=factor(mfd_hab2, levels = groups2[i]), ordered = TRUE)
-  
+  if (nrow(nonzero) >= 2) {
+    OTU_sums <- nonzero[,-1]
+    row.names(OTU_sums) <- nonzero$SeqId
+    
+    dist <- vegan::vegdist(vegan::decostand(OTU_sums, method = "hellinger"))
+    hc <- hclust(dist, method = "ward.D2")
+    ord <- hc$labels[order.dendrogram(as.dendrogram(hc))]
+    
+    levels_list[[i]] <- c(ord, zero_ids)
+    
+  } else if (nrow(nonzero) == 1) {
+    levels_list[[i]] <- c(nonzero$SeqId, zero_ids)
+    
+  } else {
+    levels_list[[i]] <- current_group$SeqId
+  }
 }
-######
 
+# ---------------------------------------------------------
+# 3. Final SeqId ordering (preserves habitat block order)
+# ---------------------------------------------------------
+levels_hab2 <- unique(unlist(levels_list, use.names = FALSE))
 
-levels_hab2 <- c(
-  levels_gr_1, levels_gr_2, levels_gr_3, levels_gr_4, levels_gr_5,
-  levels_gr_6, levels_gr_7, levels_gr_8, levels_gr_9, levels_gr_10,
-  levels_gr_11, levels_gr_12, levels_gr_13, levels_gr_14, levels_gr_15,
-  levels_gr_16, levels_gr_17, levels_gr_18, levels_gr_19, levels_gr_20,
-  levels_gr_21, levels_gr_22, levels_gr_23, levels_gr_24, levels_gr_25,
-  levels_gr_26, levels_gr_27, levels_gr_28, levels_gr_29)
-
-
-hab2_sort<-OTU_filtered_long%>%
-  mutate(SeqId = factor(SeqId, levels = levels_hab2, ordered = TRUE)) %>%
-  arrange(SeqId)
-
-hab2_sort_order<-hab2_sort%>%
-  select(mfd_hab2)%>%distinct()%>%
-  pull(mfd_hab2)
-saveRDS(hab2_sort_order, "output/hab2_sort_order.rds")
-
-palette_mfd_hab2<-readRDS("./palette_mfd_hab2.rds")
-
+# ---------------------------------------------------------
+# 4. Apply ordering + clean type labels
+# ---------------------------------------------------------
 OTU_filtered_long <- OTU_filtered_long %>%
-  filter(!mfd_hab2 %in% c("Spruce", "Willow"))
+  filter(!mfd_hab2 %in% c("Spruce", "Willow")) %>%
+  mutate(
+    Tax_curated = gsub("Methylocella", "Methylocapsa", Tax_curated),
+    SeqId = factor(SeqId, levels = levels_hab2, ordered = TRUE),
+    mfd_hab2 = factor(mfd_hab2, levels = hab2_levels),
+    type = gsub("mmoX", "*mmoX*", type),
+    type = gsub("pxmA", "*pxmA*", type),
+    type = gsub("pmoA", "*pmoA*", type),
+    type = gsub("\\*pmoA\\*2", "*pmoA2*", type)
+  )
 
-OTU_filtered_long<-OTU_filtered_long%>%
-  mutate(type=gsub("mmoX", "*mmoX*", type),
-         type=gsub("pxmA", "*pxmA*", type),
-         type=gsub("pmoA", "*pmoA*", type),
-         type = gsub("\\*pmoA\\*2", "*pmoA2*", type))          
+levels(OTU_filtered_long$type) <- c("*mmoX*", "*pmoA*", "*pmoA2*", "*pxmA*")
 
-levels(OTU_filtered_long$type)<-c("*mmoX*",
-                                  "*pmoA*",
-                                  "*pmoA2*", "*pxmA*")
-
-
+# ---------------------------------------------------------
+# 5. HEATMAP
+# ---------------------------------------------------------
 heat <- OTU_filtered_long %>%
-  mutate(Tax_curated=gsub("Methylocella", "Methylocapsa", Tax_curated))%>%
-  mutate(SeqId = factor(SeqId, levels = levels_hab2, ordered = TRUE)) %>%
-  mutate(mfd_hab2 = factor(mfd_hab2, levels = unique(hab2_sort$mfd_hab2))) %>%
-  # filter(!type=="Put. pmoA/mmoX")%>%
-  # filter(!Tax_curated %in% Tax_filter)%>%
-  # filter(mfd_hab1 %in% c("Bogs, mires and fens", "Grassland formations", "Temperate heath and scrub", "Dunes", "Forests","Greenspaces", "Freshwater"))%>%
   ggplot(aes(y = Tax_curated, x = SeqId, fill = RPKM)) +
   ggrastr::geom_tile_rast() +
-  #scale_fill_viridis_c(name = "RPKM", trans = "sqrt", limits = c(0.00, 5), na.value = "#F8E622")+
   scale_fill_gradientn(
-    name = "RPKM",  # The label
-    colors = c( "white","#82A3CD", "darkorange", "darkred", "black"),  # Your custom color gradient
-    trans = "sqrt",  # Same as in viridis
-    limits = c(0.00, 5),  # Set the limits manually
-    na.value = "black"  # Handling NA values
+    name = "RPKM",
+    colors = c("white", "#82A3CD", "darkorange", "darkred", "black"),
+    trans = "sqrt",
+    limits = c(0, 5),
+    na.value = "black"
   ) +
-  #labs(x = "", y = "") +
   facet_grid(type ~ hab1_label, scales = "free", space = "free", switch = "y") +
-  #theme_minimal() +
-  theme(axis.text.x = element_blank(),
-        axis.title = element_blank(),
-        axis.ticks = element_blank(),
-        #  axis.text.y = element_blank(),
-        axis.text.y = element_text(size = 5, margin = margin(r = -2)),
-        legend.key.size = unit(0.3, "cm"),
-        legend.title = element_text(size=5),
-        legend.text = element_text(size=5),
-        legend.position = "none",
-        strip.clip = "off",
-        strip.text.x = element_text(size = 5, face="bold"),  # Size for x-axis facet labels
-        strip.text.y = element_text(size = 5, face="bold", margin=margin(l=0.8, r=0.8)),
-        strip.text.y.left = ggtext::element_markdown(),
-        panel.border = element_rect(colour="black", fill=NA, linewidth = 0.2) ,
-        strip.background = element_blank(),
-        text = element_text(family = "Arial"),
-        plot.background = element_rect(fill = "transparent"),
-        panel.spacing = unit(0.08, "lines", data = NULL))+
-  scale_y_discrete(expand = c(0,0))+
-  theme(plot.margin = unit(c(0,0,0,0), "cm"))
+  theme(
+    axis.text.x = element_blank(),
+    axis.title = element_blank(),
+    axis.ticks = element_blank(),
+    axis.text.y = element_text(size = 5, margin = margin(r = -2)),
+    legend.position = "none",
+    strip.clip = "off",
+    strip.text.x = element_text(size = 5, face = "bold"),
+    strip.text.y = element_text(size = 5, face = "bold", margin = margin(l = 0.8, r = 0.8)),
+    strip.text.y.left = ggtext::element_markdown(),
+    panel.border = element_rect(colour = "black", fill = NA, linewidth = 0.2),
+    strip.background = element_blank(),
+    text = element_text(family = "Arial"),
+    plot.background = element_rect(fill = "transparent"),
+    panel.spacing = unit(0.08, "lines")
+  ) +
+  scale_y_discrete(expand = c(0, 0)) +
+  theme(plot.margin = unit(c(0, 0, 0, 0), "cm"))
 
-#heat
-
+# ---------------------------------------------------------
+# 6. BAR PLOT (habitat color bar)
+# ---------------------------------------------------------
 bar_plot <- OTU_filtered_long %>%
-  mutate(SeqId = factor(SeqId, levels = levels_hab2, ordered = TRUE)) %>%
-  mutate(mfd_hab2 = factor(mfd_hab2, levels = unique(hab2_sort$mfd_hab2))) %>%
   ggplot(aes(x = SeqId, fill = mfd_hab2)) +
   ggrastr::geom_tile_rast(aes(y = 1)) +
   facet_grid(. ~ hab1_label, scales = "free", space = "free") +
-  scale_fill_manual(values = palette_mfd_hab2) + # Specify your colors
+  scale_fill_manual(values = palette_mfd_hab2) +
   theme(
     axis.text = element_blank(),
     axis.ticks = element_blank(),
     axis.title = element_blank(),
     strip.text.x = element_blank(),
     legend.position = "none",
-    panel.spacing = unit(0.08, "lines", data = NULL),
-    panel.border = element_rect(colour="black", fill=NA, linewidth = 0.2)
-  )+   scale_y_continuous(expand = c(0,0)) +
-  theme(plot.margin = unit(c(0,-1,0,0), "cm"))
+    panel.spacing = unit(0.08, "lines"),
+    panel.border = element_rect(colour = "black", fill = NA, linewidth = 0.2)
+  ) +
+  scale_y_continuous(expand = c(0, 0)) +
+  theme(plot.margin = unit(c(0, -1, 0, 0), "cm"))
 
 
-
-# Step 3: Combine the heatmap plot and the bar plot
 
 combined_plot <- heat / bar_plot + plot_layout(heights = c(20, 0.5)) + theme(panel.background = element_blank(), plot.background = element_blank())
-#combined_plot
+combined_plot
 
 
 
@@ -372,6 +359,11 @@ ggsave("output/gene_abundance_red.svg",
        dpi=300)
 
 ########################################
+
+
+
+saveRDS(levels_hab2, "26_12_06_seqid_order_hab2.rds")
+saveRDS(hab2_levels, "26_12_06_habitat_order_hab2.rds")
 
 
 #########  Extract per-habitat legends ######
@@ -431,14 +423,8 @@ ggsave("output/ISME_gene_legend.svg", height=3, width=30)
 
 
 
-
-
-
-
 ###############################################################################
 ###### Investigate abundance of specific groups (TUSC, Binatales, putative groups) #####
-## The following sections subset the data to look at putative pmoA/mmoX groups
-## and other clades of interest, re-cluster, and create specialized plots.
 ###############################################################################
 
 ### Filtering to selected genes for display
@@ -625,10 +611,7 @@ ggsave("output/Gene_abundance_put_only_25_2_11.svg",
 # Dunes: Rhodomicrobium + Methylocystis
 # Grasslands: Rhodomicrobium + Gammas + cystis
 # Temperate heath: as above + pmoA2
-# Agriculture: some cereals with USCg and USCα hotspots. Could this be location/reflected in other things
-
-
-
+# Agriculture and USCa
 
 Tax_filter<-c("TUSC", "Likely_mmoX", "AVCC01_Methylotenera_clade", "Methylomonadaceae; Methyloprofundus_WTBX01_clade", #"USCg_Methyloglobulus",
                "Methylococcales_unknown", "o_Rhizobiales_pmoA", "Methylococcaceae; Methylogaea", "Methylomagnum", 
@@ -896,15 +879,12 @@ heat <- OTU_filtered_long_agri %>%
   mutate(mfd_hab2 = factor(mfd_hab2, levels = unique(hab2_sort$mfd_hab2))) %>%
   ggplot(aes(y = Tax_curated, x = SeqId, fill = RPKM)) +
   ggrastr::geom_tile_rast() +
-  #scale_fill_viridis_c(name = "RPKM", trans = "sqrt", limits = c(0.00, 5), na.value = "#F8E622")+
-  scale_fill_gradientn(
-    name = "RPKM",  # The label
-    colors = c( "white","#82A3CD", "darkorange", "darkred", "black"),  # Your custom color gradient
-    trans = "sqrt",  # Same as in viridis
-    limits = c(0.00, 5),  # Set the limits manually
-    na.value = "black"  # Handling NA values
+scale_fill_gradientn(
+    name = "RPKM",  
+    colors = c( "white","#82A3CD", "darkorange", "darkred", "black"),  
+    limits = c(0.00, 5), 
+    na.value = "black"  
   ) +
-  #labs(x = "", y = "") +
   facet_grid(type ~ hab1_label, scales = "free", space = "free", switch = "y") +
   #theme_minimal() +
   theme(axis.text.x = element_blank(),
@@ -917,7 +897,7 @@ heat <- OTU_filtered_long_agri %>%
         legend.text = element_text(size=5),
         legend.position = "none",
         strip.clip = "off",
-        strip.text.x = element_text(size = 5, face="bold", margin=margin(b=0.8)),  # Size for x-axis facet labels
+        strip.text.x = element_text(size = 5, face="bold", margin=margin(b=0.8)),  
         strip.text.y = element_text(size = 5, face="bold", margin=margin(l=1.6, r=0.8)),
         strip.text.y.left = ggtext::element_markdown(),
         panel.border = element_rect(colour="black", fill=NA, linewidth = 0.2) ,

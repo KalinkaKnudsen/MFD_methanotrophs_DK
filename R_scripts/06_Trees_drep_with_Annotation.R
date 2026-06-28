@@ -4,8 +4,6 @@
 ## 06_Trees_drep_with_Annotation.R
 ## Purpose: Create phylogenetic trees of dereplicated methanotroph MAGs with
 ##          metabolic annotations and genome quantification (Sylph) overlays.
-##          Produces multi-panel phylogenetic visualizations for major lineages
-##          showing bootstrap support, metabolic gene presence, and habitat abundance.
 ## ============================================================================
 setwd("path/to/your/repo/MFD_methanotrophs_DK/")
 
@@ -17,18 +15,14 @@ library(stringr)
 library(ggh4x)
 
 
-# ===== PHYLOGENETIC TREE LOADING AND PROCESSING =====
-# Load phylogenetic tree in Newick format from dereplicated genome phylogeny
+
 tree_drep <- treeio::read.tree("data/phylogenomic_tree.treefile")
 
 # Remove GTDB reference prefixes (RS_, GB_) from tip labels to leave only genome IDs
 tree_drep$tip.label <- gsub("RS_", "", tree_drep$tip.label)
 tree_drep$tip.label <- gsub("GB_", "", tree_drep$tip.label)
 
-# ===== TAXONOMY DATA LOADING AND CORRECTIONS =====
-# Load taxonomy classification and genome metadata
-# Classify genomes by origin (Microflora Danica vs GTDB references)
-# Correct misclassified Methylocella species names to proper Methylocapsa genus assignments
+
 tax<-readRDS("data/MFD_renamed_tax_25_03_04.rds")%>%
   mutate(type = if_else(grepl("MFD", user_genome), 'Microflora Danica','GTDB'),
          type=if_else(grepl("LIB", user_genome), "Microflora Danica", type))%>%
@@ -44,7 +38,7 @@ tax<-readRDS("data/MFD_renamed_tax_25_03_04.rds")%>%
   mutate(label_3=gsub("Methylocella sp029855125", "Methylocapsa sp. D3K7", label_3))
 
 # ===== DUPLICATE TAXA REMOVAL =====
-# Identify duplicate GTDB reference species to avoid redundancy
+
 duplicates <- tax %>%
   group_by(Species) %>%
   filter(n() > 1) %>%
@@ -55,7 +49,7 @@ duplicates <- tax %>%
 # Remove duplicate GTDB taxa from taxonomy table
 tax<-tax%>%filter(!tip.label %in% duplicates)
 
-# ===== TREE ROOTING AND DUPLICATE TIP REMOVAL =====
+
 # Perform midpoint rooting on the phylogenetic tree to place the tree root at the point equidistant from all tips
 tr <- phytools::midpoint.root(tree_drep)
 # Remove tips corresponding to duplicate GTDB taxa from the tree
@@ -64,14 +58,13 @@ pr_tree <- ggtree::ggtree(pr)
 pr_tree
 
 
-# ===== SYLPH GENOME QUANTIFICATION LOADING AND HABITAT STANDARDIZATION =====
+
 # Load Sylph quantification data and apply species name corrections matching taxonomy
 sylph<-readRDS("data/sylph_gtdb_25_03_06.rds")%>%
   mutate(Species=gsub("s__Methylocella sp002890675", "s__Ca. Methyloaffinis lahnbergensis", Species))%>%
   mutate(Species=gsub("s__Methylocella sp004564215", "s__Methylocapsa gorgona", Species))%>%
   mutate(Species=gsub("s__Methylocella sp029855125", "s__Methylocapsa sp. D3K7", Species))
 
-# Standardize habitat metadata through series of string replacements and conditional mutations:
 
 sylph<-sylph%>%
   filter(!is.na(fieldsample_barcode))%>%
@@ -105,7 +98,7 @@ sylph<-sylph%>%
          hab1_label=gsub("Freshwater", "Freshwater\nsediment", hab1_label))%>%
   filter(!mfd_hab2 %in% c("Spruce", "Willow"))
 
-# Load pre-computed habitat ordering and color palette for consistent visualization
+
 levels_hab2<-readRDS("output/hab2_sort_order.rds")
 palette_mfd_hab2<-readRDS("data/palette_mfd_hab2_ISME.rds")
 
@@ -114,8 +107,7 @@ hab2_sort<-sylph%>%
   mutate(SeqId = factor(SeqId, levels = levels_hab2, ordered = TRUE)) %>%
   arrange(SeqId)
 
-# ===== KEGG ANNOTATION DATA LOADING AND PATHWAY LABEL ABBREVIATION =====
-# Load KEGG/custom HMM gene annotation table with metabolic classifications
+
 KEGG<-readRDS("output/KEGG_25_12_02.rds")%>%
   # Create tree label combining taxonomic ranks with genome ID for tree tip labeling
   mutate(tree_label = paste0(if_else(Genus == "g__", paste0(Family, ";", Genus), if_else(Species == "s__", paste0(Genus,";",Species), Species)),  " | ", genome ))
@@ -139,7 +131,7 @@ KOs<-read_excel("data/KO_KSK_methanotroph_paper.xlsx") %>%
   mutate (Pathway = gsub ("CBB cycle" , "CBB", Pathway)) %>%
   # Create gene labels combining gene name with metabolic step
   mutate (gene_label = paste0(Gene_collapsed , ' - ',  Pathway_step))%>%
-  # Format metabolic step labels with line breaks for faceted visualization
+
   mutate(Metabolic_step = gsub("Methane oxidation", "Methane\noxidation", Metabolic_step))%>%
   mutate(Metabolic_step = gsub("Methanol oxidation", "Methanol\noxidation", Metabolic_step))%>%
   mutate(Metabolic_step = gsub("Formaldehyde oxidation/assimilation", "Formaldehyde\noxidation/assimilation", Metabolic_step))%>%
@@ -159,7 +151,7 @@ hab2_sort_order<-readRDS("output/hab2_sort_order.rds")
 
 library(tidyverse)
 
-# ===== RHODOMICROBIUM LINEAGE SECTION =====
+
 # From here, we create phylogenetic trees and metabolic visualizations for the Rhodomicrobium genus
 
 # Filter taxonomy to Rhodomicrobium genus and extract tip labels for tree subsetting
@@ -873,7 +865,7 @@ bar_plot <- sylph %>%
     legend.position = "none",
     legend.key.size = unit(0.2, "cm"),
     legend.spacing.y = unit(0.07, "cm"),      # space between rows
-    legend.spacing.x = unit(0.07, "cm"),      # space between columns
+    legend.spacing.x = unit(0.07, "cm"),      
     legend.title = element_blank(),
     legend.text = element_text(size=5, margin = margin(l = 0.4)),
     panel.border = element_rect(colour="black", fill=NA, linewidth = 0.2) ,

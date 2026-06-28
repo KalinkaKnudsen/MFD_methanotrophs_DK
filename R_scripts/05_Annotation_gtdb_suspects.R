@@ -2,9 +2,7 @@
 ## ============================================================================
 ## 05_Annotation_gtdb_suspects.R
 ## Purpose: Analyse and visualise metabolic annotations for GTDB-representative
-##          methanotroph genomes, stratified by taxonomic groups and metabolic
-##          gene presence. Produces publication-quality heatmaps showing methane
-##          oxidation, carbon assimilation, and electron metabolism pathways.
+##          methanotroph genomes. 
 ## ============================================================================
 
 library(cowplot)
@@ -52,7 +50,6 @@ KOs<-read_excel("data/KO_KSK_methanotroph_paper.xlsx") %>%
   mutate(Metabolic_step = gsub("Custom HMM", "Custom\nHMM", Metabolic_step))
 
 ## ---- Prepare KEGG data for visualization ----
-# Sort by genus for consistency; create combined gene+step label for heatmap x-axis annotation
 KEGG_sort<-KEGG%>%
   arrange(Genus)
 
@@ -64,9 +61,7 @@ KEGG<-KEGG%>%
 KEGG<-KEGG%>%
   mutate(class_label = paste0(Class, ";", Family,";", tree_label))
 
-## ---- Define exclusion lists for contaminants and non-methanotrophs ----
-# genes_remove_string: gene families from non-methane-oxidizers (nitrifiers, amoA, non-specific MOX)
-# genus_remove_string: non-methanotroph genera to exclude (nitrifiers, nitrospirae, etc.)
+### Cleaning up the display
 genes_remove_string<-c("Nitrosomonadaceae (1/3)", "Homologous_MO (1/3)", "Nitrosomonas (1/3)", "Propane_MO_Actino_cluster (1/3)",
                        "Homologous_pmoA (1/3)", "Cycloclasticus (1/3)", "Betaproteobacteria_amoA (1/3)",
                        "Nitrosococcus (1/3)", "Nitrospira_clade_B (1/3)", "Actinobacteria (1/3)", "Homologous_Rhodopila (1/3)")
@@ -106,7 +101,7 @@ genes_keep<-genomes_keep %>%
 
 unique(CM$data$genome) 
 
-## ---- Filter and visualize Binatia/Gemmatimonadetes (candidate lineages) ----
+## ---- Filter and visualize Binatia/Gemmatimonadetes ----
 
 genomes_Bin_keep<-KEGG %>% 
   filter(!grepl("MFD|LIB", genome))%>%
@@ -182,7 +177,6 @@ pl_bin_tusc <- KEGG %>%
 pl_bin_tusc
 
 ## ---- Export Binatia/Gemmatimonadetes heatmap ----
-# Save high-resolution PNG and SVG for publication
 ggsave("./output/GTDB_Bin_TUSC_25_12_10.png",pl_bin_tusc,
        units = c("mm"),
        height = 90,
@@ -322,7 +316,7 @@ pl_2 <- KEGG %>%
         plot.margin = margin(t = 0, r = 0, b = 0, l = 0, unit = "cm")
   )
 
-## ---- Export detailed multi-family heatmap ----
+## ---- Export  heatmap ----
 ggsave("./output/metabolism_Extended_figs/GTDB_gtdb_sub_met_25_12_10.png",pl_2,
        units = c("mm"),
        height = 210,
@@ -426,8 +420,7 @@ ggsave("output/GTDB_Methylococcales_gtdb_sub_met_25_12_10.svg",pl_3,
 
 
 
-## ---- MFD Binatia/Gemmatimonadetes heatmap (MFD-TUSC/Bin candidates) ----
-# Subset MFD MAGs to Binatia and Gemmatimonadetes classes for visualization
+## ---- MFD Binatia/Gemmatimonadetes heatmap (MFD-TUSC/Bin ) ----
 genomes_Bin_keep<-KEGG %>% 
   filter(grepl("MFD|LIB", genome))%>%
   filter(!is.na(Genus))%>%
@@ -516,7 +509,7 @@ ggsave("output/MFD_Bin_TUSC_sub_met_25_12_10.svg",pl_bin_tusc,
        dpi=300)
 
 ## ---- Electron donor/acceptor metabolism heatmap (MFD Binatia/Gemmatimonadetes) ----
-# Focus on nitrogen, sulfur, energy (H2/CO oxidation) pathways; exclude methane oxidation
+
 NS <- KEGG %>% 
   filter(genome %in% genomes_Bin_keep$genome)%>%
   mutate(Order=gsub("o__", "", Order))%>% 

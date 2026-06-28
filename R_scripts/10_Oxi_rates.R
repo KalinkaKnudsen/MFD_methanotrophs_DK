@@ -36,14 +36,12 @@ df_all <- df_all %>%
   ungroup()
 
 
-# Read sample metadata / linkage table and join to `df_all` to attach dates, masses, etc.
+# Read sample metadata / linkage table and join to `df_all` 
 sample_link<-readxl::read_excel("data/Sample_linkage_mass.xlsx")%>%
   mutate(sample_id=as.character(sample_id))%>%mutate(Date=as.Date(Date))%>%filter(!Date=="2025-04-22")%>%distinct()
 
 # Left-join sample metadata and set `oxi_time` to NA for calibration standards
 df_all<-df_all%>%left_join(sample_link)%>%mutate(oxi_time=if_else(Type=="Calibration Standard", NA, oxi_time))
-
-
 
 # Quick check plot: CH4 concentration over time per `sample_id`
 df_all%>%filter(Component=="CH4 [FID]")%>%
@@ -53,7 +51,6 @@ df_all%>%filter(Component=="CH4 [FID]")%>%
     x = "Date and Time",
     y = "CH4 [ppm]") +
   theme_minimal()
-
 
 
 
@@ -75,14 +72,14 @@ my_pub_theme <- theme_classic() +
     # Plot title & subtitle
     plot.subtitle = element_text(
       size = 5,
-      #  hjust = 0.05,              # nudge right (0 = far left, 1 = far right)
-      vjust = 1,                 # push down (default is ~0.5–1)
+
+      vjust = 1,              
     ),
     plot.title = element_text(
       size = 5,
       face="bold",
-      #  hjust = 0.05,              # nudge right (0 = far left, 1 = far right)
-      vjust = 1,                 # push down (default is ~0.5–1)
+
+      vjust = 1,                
     ),
     
     # Legend text & title
@@ -90,14 +87,11 @@ my_pub_theme <- theme_classic() +
     legend.text = element_text(size = 5),
     
     # Legend spacing & key size
-    legend.key.size = unit(0.1, "cm"),       # overall key box size
-    # legend.key.height = unit(0.2, "cm"),     # vertical spacing
-    #  legend.key.width = unit(0.2, "cm"),      # horizontal spacing
-    legend.spacing.y = unit(0.07, "cm"),      # space between rows
-    legend.spacing.x = unit(0.07, "cm"),      # space between columns
+    legend.key.size = unit(0.1, "cm"),     
+    legend.spacing.y = unit(0.07, "cm"),     
+    legend.spacing.x = unit(0.07, "cm"),      
     legend.position = c(0.8, 0.8),
     legend.justification = c(0, 1),  
-    # Legend background
     legend.background = element_rect(fill = "transparent")
   )
 
@@ -242,7 +236,7 @@ legend_labels <- setNames(
 )
 my_pub_theme <- theme_classic() +
   theme(
-    text = element_text(family = "Arial"),  # ← this line sets Arial globally
+    text = element_text(family = "Arial"), 
     plot.margin = margin(0, 0, 0, 0),
     axis.title.x = element_text(size = 5, margin = margin(t = 0.1, b=1)),
     axis.title.y = element_text(size = 5, margin = margin(r = 0.05)),
@@ -255,27 +249,23 @@ my_pub_theme <- theme_classic() +
     # Plot title & subtitle
     plot.subtitle = element_text(
       size = 6,
-      #hjust = 0.05,              # nudge right (0 = far left, 1 = far right)
-      vjust = 1,                 # push down (default is ~0.5–1)
+
+      vjust = 1,               
     ),
     plot.title = element_text(
       size = 5,
       face="bold",
-      #  hjust = 0.05,              # nudge right (0 = far left, 1 = far right)
-      vjust = 1,                 # push down (default is ~0.5–1)
+      vjust = 1,                
     ),
     
-    # Legend text & title
-    #  legend.title = element_text(size = 5),
+
     legend.title = element_blank(),
     legend.text = element_text(size = 5),
     
     # Legend spacing & key size
-    legend.key.size = unit(0.1, "cm"),       # overall key box size
-    # legend.key.height = unit(0.2, "cm"),     # vertical spacing
-    #  legend.key.width = unit(0.2, "cm"),      # horizontal spacing
-    legend.spacing.y = unit(0.07, "cm"),      # space between rows
-    legend.spacing.x = unit(0.07, "cm"),      # space between columns
+    legend.key.size = unit(0.1, "cm"),  
+    legend.spacing.y = unit(0.07, "cm"),     
+    legend.spacing.x = unit(0.07, "cm"),      
     legend.position = c(0.6, 0.9),
     legend.justification = c(0, 1),  
     # Legend background
@@ -294,14 +284,14 @@ for (loc in locations) {
     geom_point(data = df_data_loc, aes(x = oxi_time, y = Amount, fill = sample_id),
                size = 1.5, color = "black", pch = 21, alpha = 1) +
     annotate("text",
-             x = 260,  # right edge of plot
-             y = 4,  # slightly above top data point
+             x = 260,  
+             y = 4,  
              label = "C(t) == C[0] %.% e^{-k * t}",
              parse = TRUE,
              hjust = 1.1, vjust = 2,
              size = 5 / .pt) +
-    scale_fill_manual(values = custom_colors, labels = legend_labels)+ #, name = expression(C(t) == C[0] %.% e^{-k * t})) +
-    scale_color_manual(values = custom_colors, labels = legend_labels )+ #, name = expression(C(t) == C[0] %.% e^{-k * t}))+
+    scale_fill_manual(values = custom_colors, labels = legend_labels)+ 
+    scale_color_manual(values = custom_colors, labels = legend_labels )+ 
     labs(
       x = "Time [min]",
       y = expression(CH[4]~"[ppm]"),
@@ -347,14 +337,14 @@ for (loc in locations) {
     geom_point(data = df_data_loc, aes(x = oxi_time, y = Amount, fill = sample_id),
                size = 1.5, color = "black", pch = 21, alpha = 1) +
     annotate("text",
-             x = 490,  # right edge of plot
-             y = 3.1,  # slightly above top data point
+             x = 490,  
+             y = 3.1,  
              label = "C(t) == C[0] %.% e^{-k * t}",
              parse = TRUE,
              hjust = 1.1, vjust = 2,
              size = 5 / .pt) +
-    scale_fill_manual(values = custom_colors, labels = legend_labels)+ #, name = expression(C(t) == C[0] %.% e^{-k * t})) +
-    scale_color_manual(values = custom_colors, labels = legend_labels )+ #, name = expression(C(t) == C[0] %.% e^{-k * t}))+
+    scale_fill_manual(values = custom_colors, labels = legend_labels)+ 
+    scale_color_manual(values = custom_colors, labels = legend_labels )+
     labs(
       x = "Time [min]",
       y = expression(CH[4]~"[ppm]"),
@@ -401,8 +391,8 @@ sheet_names <- excel_sheets(excel_file)
 
 pressure_temp <- readxl::read_excel(excel_file, sheet = "Ark1",
                                     col_types = c("text", "numeric", "text", "date", "text", rep("guess", 20)))%>%
-  slice(1:13) %>%      # keep rows 1 through 13
-  select(1:5)          # keep the first 5 columns
+  slice(1:13) %>%     
+  select(1:5)         
 
 
 # set the known volumes (in mL) for start and end headspace
@@ -447,9 +437,8 @@ df_ch4_pressure<-df_ch4%>%
 # ---------------- Constants ----------------
 V_headspace_mL <- 250    # headspace volume (mL)
 V_sample_mL    <- 2      # sample withdrawn each time (mL)
-#Temp_C_colname <- "Temp" # column name for temperature in °C
-Pressure_colname <- "Pressure_start" # column name with measured headspace pressure (bar)
-Pressure_end_colname <- "Pressure_end" # column name with end pressure (bar) to anchor backward recon
+Pressure_colname <- "Pressure_start"
+Pressure_end_colname <- "Pressure_end" 
 # ------------------------------------------------
 
 # constants / conversions
@@ -467,8 +456,7 @@ PVT_to_n <- function(P_bar, V_m3, Temp_K) { (P_bar * bar_to_Pa) * V_m3 / (R * Te
 
 nVT_to_Pbar <- function(n_mol, V_m3, Temp_K) { (n_mol * R * Temp_K / V_m3) / bar_to_Pa }
 
-# Prepare grouped data for reconstruction: compute Temp_K, index per injection,
-# and compute measured n at start/end when pressures are available
+
 dat_grouped <- df_ch4_pressure %>%
   mutate(Temp_K = Temp + 273.15) %>%
   group_by(sample_id) %>%
@@ -477,14 +465,14 @@ dat_grouped <- df_ch4_pressure %>%
     n_start_measured = if_else(!is.na(Pressure_start) & !is.na(Temp_K),
                          PVT_to_n(Pressure_start, V_head_m3, Temp_K),
                          NA_real_),
-    # measured moles at end pressure (for backward anchor) per row
+
     n_end_measured = if_else(!is.na(Pressure_end) & !is.na(Temp_K),
                              PVT_to_n(Pressure_end, V_head_m3, Temp_K),
                              NA_real_)
   ) %>%
   ungroup()
 
-# Process per sample_id: reconstruct forward and backward gas volumes and pressures
+
 results <- dat_grouped %>%
   group_by(sample_id) %>%
   group_modify(~ {
@@ -492,7 +480,7 @@ results <- dat_grouped %>%
     n <- nrow(d)
     if (n == 0) return(d)  # skip empty groups
     
-    # Initialize result vectors
+
     n_forward      <- rep(NA_real_, n)
     P_forward_bar  <- rep(NA_real_, n)
     n_back         <- rep(NA_real_, n)
@@ -578,7 +566,7 @@ results <- dat_grouped %>%
   ungroup()
 
 
-# Keep only columns you want to inspect and ensure order is preserved
+
 final <- results %>%
   arrange(sample_id, idx) %>%
   select(
@@ -595,8 +583,8 @@ print(final, n = Inf)
 # 1) Row-wise differences added to final
 final_comp <- final %>%
   mutate(
-    delta_n = n_forward - n_back,                 # positive => forward predicts more moles
-    delta_P_bar = P_forward_bar - P_back_bar,     # positive => forward predicts higher pressure
+    delta_n = n_forward - n_back,                 
+    delta_P_bar = P_forward_bar - P_back_bar,   
     rel_delta_n = if_else(!is.na(n_back) & n_back != 0, delta_n / n_back, NA_real_),
     rel_delta_P = if_else(!is.na(P_back_bar) & P_back_bar != 0, delta_P_bar / P_back_bar, NA_real_)
   )
@@ -612,12 +600,12 @@ summary_by_sample <- final_comp %>%
     rmse_delta_n = sqrt(mean((delta_n)^2, na.rm = TRUE)),
     mean_delta_P_bar = mean(delta_P_bar, na.rm = TRUE),
     max_abs_delta_P_bar = max(abs(delta_P_bar), na.rm = TRUE),
-    final_delta_n = last(delta_n),                # difference at the last index in group
+    final_delta_n = last(delta_n),              
     final_delta_P_bar = last(delta_P_bar)
   ) %>%
   arrange(desc(max_abs_delta_n))
 
-# 3) Quick global diagnostics
+
 global_diag <- final_comp %>%
   summarise(
     total_rows = n(),
@@ -627,7 +615,7 @@ global_diag <- final_comp %>%
     overall_mean_rel_delta_n = mean(abs(rel_delta_n), na.rm = TRUE)
   )
 
-# 4) Show worst mismatches (top 10 by absolute mole difference)
+
 worst_rows <- final_comp %>%
   arrange(desc(abs(delta_n))) %>%
   slice_head(n = 10) %>%
@@ -640,12 +628,10 @@ print(global_diag)
 print(summary_by_sample, n = Inf)
 print(worst_rows, n = Inf)
 
-### So, the max difference between begin and end is 0.018 bar. This is quite ok I think.
-# Combine forward/backward reconstructions: use the mean when both estimates exist,
-# otherwise use the single available estimate (used to compute CH4 moles below).
+
 final_combined <- final %>%
   mutate(
-    # combined mole count: mean when both present, otherwise the one that exists
+
     n_combined = case_when(
       !is.na(n_forward) & !is.na(n_back) ~ (n_forward + n_back) / 2,
       !is.na(n_forward) & is.na(n_back)  ~ n_forward,
@@ -653,14 +639,14 @@ final_combined <- final %>%
       TRUE                                ~ NA_real_
     ),
     
-    # optional: combined pressure computed from n_combined (bar)
+
     P_combined_bar = if_else(
       !is.na(n_combined) & !is.na(Temp_K),
       (n_combined * R * Temp_K / V_head_m3) / bar_to_Pa,
       NA_real_
     ),
     
-    # useful flag to know how the value was formed
+
     n_source = case_when(
       !is.na(n_forward) & !is.na(n_back) ~ "mean(forward,back)",
       !is.na(n_forward) & is.na(n_back)  ~ "forward_only",
@@ -669,7 +655,7 @@ final_combined <- final %>%
     )
   )
 
-# inspect
+
 print(final_combined %>% select(sample_id, idx, `Injection Name`, oxi_time,
                                 n_forward, n_back, n_combined, P_combined_bar, n_source),
       n = Inf)
@@ -700,11 +686,11 @@ C0_mol_ch4 <- (atm_ch4/1e6)*PVT_to_n(Pressure_bar_atm, V_head_m3, Temp_atm_K)
 C0_µmol_ch4 <-C0_mol_ch4*1e6 
 
 
-# Per-sample log-linear fit of ln(n_CH4[µmol]) versus time to extract first-order rate k
+
 df_slopes <- df_ch4_moles %>%
   group_by(sample_id) %>%
   summarise(
-    # Fit ln(n_ch4) ~ oxi_time
+
     slope = {
       fit <- lm(ln_n_ch4_umol ~ oxi_time)
       coef(fit)[2]   # extract slope
@@ -725,22 +711,21 @@ df_slopes <- df_ch4_moles %>%
 
 
 ############# Now to plotting ################
-# Build plotmath legend labels per sample_id using k, r_soil and R^2 (used in ggplot legends)
 legend_labels_rates <- setNames(
   lapply(1:nrow(df_slopes), function(i) {
     k_val <- round(df_slopes$k_hour[i], 3)
     r_val <- df_slopes$r_soil[i]
     r2_val <- round(df_slopes$r2[i], 4)
     
-    # Convert r_val to scientific notation with 2 decimals
+
     r_val_sci <- formatC(r_val, format = "e", digits = 2)
     
-    # Extract mantissa and exponent for plotmath
+
     parts <- strsplit(r_val_sci, "e")[[1]]
     mantissa <- as.numeric(parts[1])
     exponent <- as.integer(parts[2])
     
-    # Build plotmath expression
+
     bquote("k =" ~ .(k_val) * " " * h^-1 * ", " *
              r[soil] == .(mantissa) %.% 10^.(exponent) * " " * mu * mol ~ h^-1 ~ g^-1 * ", " *
              R^2 == .(r2_val))
@@ -757,37 +742,31 @@ my_pub_theme <- theme_classic() +
     axis.title.y = element_text(size = 5, margin = margin(r = 0.05)),
     axis.text = element_text(size = 5),
     
-    # Force axis lines to be drawn
+
     axis.line = element_line(color = "black", linewidth = 0.25),
     axis.ticks = element_line(color = "black", linewidth = 0.25),
     
-    # Plot title & subtitle
+
     plot.subtitle = element_text(
       size = 6,
-      #hjust = 0.05,              # nudge right (0 = far left, 1 = far right)
-      vjust = 1,                 # push down (default is ~0.5–1)
+           
+      vjust = 1,             
     ),
     plot.title = element_text(
       size = 5,
       face="bold",
-      #  hjust = 0.05,              # nudge right (0 = far left, 1 = far right)
-      vjust = 1,                 # push down (default is ~0.5–1)
+
+      vjust = 1,              
     ),
     
-    # Legend text & title
-    #  legend.title = element_text(size = 5),
+
     legend.title = element_blank(),
     legend.text = element_text(size = 5),
-    
-    # Legend spacing & key size
-    legend.key.size = unit(0.1, "cm"),       # overall key box size
-    # legend.key.height = unit(0.2, "cm"),     # vertical spacing
-    #  legend.key.width = unit(0.2, "cm"),      # horizontal spacing
-    legend.spacing.y = unit(0.07, "cm"),      # space between rows
-    legend.spacing.x = unit(0.07, "cm"),      # space between columns
+    legend.key.size = unit(0.1, "cm"),      
+    legend.spacing.y = unit(0.07, "cm"),   
+    legend.spacing.x = unit(0.07, "cm"),    
     legend.position = c(0.35, 1),
     legend.justification = c(0, 1),  
-    # Legend background
     legend.background = element_rect(fill = "transparent")
   )
 
@@ -795,7 +774,6 @@ my_pub_theme <- theme_classic() +
 
 df_ch4_neg <- df_all %>%
   filter(Component == "CH4 [FID]") %>%
-#  filter(!is.na(location))%>%
   filter(oxi_time < 600) %>%
   arrange(sample_id, oxi_time)%>%
   filter(sample_id=="neg")
@@ -807,29 +785,29 @@ for (loc in locations) {
   df_curve_loc <- df_curve_all %>% filter(location == loc)
   
   p <- ggplot() +
-    # negative control line (dashed black, no grouping)
+
     geom_line(data = df_ch4_neg, 
-      aes(x = oxi_time, y = Amount),        # change these column names if needed
+      aes(x = oxi_time, y = Amount),   
       linewidth = 0.8,
       inherit.aes = FALSE, 
       color = "grey80") +
     geom_point(
       data = df_ch4_neg, 
-      aes(x = oxi_time, y = Amount),        # change these column names if needed
+      aes(x = oxi_time, y = Amount),    
       fill = "grey80",size = 1.5, color = "black", pch = 21) +
     geom_line(data = df_curve_loc, aes(x = oxi_time, y = CH4_pred, group = sample_id, color = sample_id),
               linewidth = 1, alpha=0.3) +
     geom_point(data = df_data_loc, aes(x = oxi_time, y = Amount, fill = sample_id),
                size = 1.5, color = "black", pch = 21, alpha = 1) +
     annotate("text",
-             x = 180,  # right edge of plot
-             y = 4.42,  # slightly above top data point
+             x = 180, 
+             y = 4.42,  
              label = "C(t) == C[0] %.% e^{-k * t}",
              parse = TRUE,
              hjust = 1.1, vjust = 2,
              size = 5 / .pt) +
-    scale_fill_manual(values = custom_colors, labels = legend_labels_rates)+ #, name = expression(C(t) == C[0] %.% e^{-k * t})) +
-    scale_color_manual(values = custom_colors, labels = legend_labels_rates )+ #, name = expression(C(t) == C[0] %.% e^{-k * t}))+
+    scale_fill_manual(values = custom_colors, labels = legend_labels_rates)+ 
+    scale_color_manual(values = custom_colors, labels = legend_labels_rates )+ 
     labs(
       x = "Time [min]",
       y = expression(CH[4]~"[ppm]"),
@@ -856,14 +834,14 @@ for (loc in locations) {
     geom_point(data = df_data_loc, aes(x = oxi_time, y = Amount, fill = sample_id),
                size = 1.5, color = "black", pch = 21, alpha = 1) +
     annotate("text",
-             x = 330,  # right edge of plot
-             y = 1.1,  # slightly above top data point
+             x = 330, 
+             y = 1.1,  
              label = "C(t) == C[0] %.% e^{-k * t}",
              parse = TRUE,
              hjust = 1.1, vjust = 2,
              size = 5 / .pt) +
-    scale_fill_manual(values = custom_colors, labels = legend_labels_rates)+ #, name = expression(C(t) == C[0] %.% e^{-k * t})) +
-    scale_color_manual(values = custom_colors, labels = legend_labels_rates )+ #, name = expression(C(t) == C[0] %.% e^{-k * t}))+
+    scale_fill_manual(values = custom_colors, labels = legend_labels_rates)+ 
+    scale_color_manual(values = custom_colors, labels = legend_labels_rates )+ 
     labs(
       x = "Time [min]",
       y = expression(CH[4]~"[ppm]"),
@@ -937,11 +915,10 @@ mapping <- df_final %>%
   ungroup() %>%
   select(location, sample_id, sample_id_v2, final_CH4_pred)
 
-# 3) Join mapping back to your full dataset (so every row gets sample_id_v2)
 df_curve_capsa2 <- df_curve_capsa %>%
   left_join(mapping %>% select(location, sample_id, sample_id_v2), by = c("location", "sample_id"))
 
-# 4) If you want only the endpoint rows with the new labels:
+
 df_curve_labels <- df_curve_capsa2 %>%
   group_by(sample_id) %>%
   slice_max(order_by = oxi_time, n = 1, with_ties = FALSE) %>%
@@ -957,7 +934,7 @@ df_ctrl_label <- df_ch4_neg %>%
   slice_max(order_by = oxi_time, n = 1, with_ties = FALSE) %>%
   mutate(sample_id = "Neg control")   # label text
 
-# Join labels for remapped sample names (e.g., F1, F2, S1...) used for plotting
+
 df_slopes2<-df_slopes%>%
   left_join(df_curve_labels)%>%
   filter(!is.na(sample_id_v2))
@@ -965,19 +942,19 @@ df_slopes2<-df_slopes%>%
 #### Making the legends:
 legend_labels_rates <- setNames(
   lapply(seq_len(nrow(df_slopes2)), function(i) {
-    # values
+
     sample_label <- df_slopes2$sample_id_v2[i]
     k_val <- round(df_slopes2$k_hour[i], 3)
     r_val <- df_slopes2$r_soil[i]
     r2_val <- round(df_slopes2$r2[i], 4)
     
-    # scientific notation with 2 decimals
+
     r_val_sci <- formatC(r_val, format = "e", digits = 2)
     parts <- strsplit(r_val_sci, "e")[[1]]
     mantissa <- as.numeric(parts[1])
     exponent <- as.integer(parts[2])
     
-    # build plotmath expression; sample_label inserted as plain text
+
     bquote(.(sample_label) * ":" ~
              k == .(k_val) * " " * h^-1 * "," ~
              r[soil] == .(mantissa) %.% 10^.(exponent) * " " * mu * mol ~ h^-1 ~ g^-1 * "," ~
@@ -1000,7 +977,7 @@ custom_colors <- c(
   "F4" =   "brown",   # gold
   
   "S1" ="#2219e6", # Teal
-  "S2" = "#2219e6", # Periwinkle
+  "S2" = "#2219e6", # 
   "S3" ="#2219e6", # Blue
   "S4" ="#2219e6"
 )
@@ -1010,15 +987,15 @@ legend_title_expr <- expression(C(t) == C[0] %.% e^{-k * t})
 
 
 p <- ggplot() +
-    # negative control line (dashed black, no grouping)
+
     geom_line(data = df_ch4_neg, 
-              aes(x = oxi_time, y = Amount),        # change these column names if needed
+              aes(x = oxi_time, y = Amount),     
               linewidth = 0.8,
               inherit.aes = FALSE, 
               color = "grey80") +
     geom_point(
       data = df_ch4_neg, 
-      aes(x = oxi_time, y = Amount),        # change these column names if needed
+      aes(x = oxi_time, y = Amount), 
       fill = "grey80",size = 1.3, color = "black", pch = 21) +
     geom_line(data = df_curve_capsa, aes(x = oxi_time, y = CH4_pred, group = sample_id_v2, color = sample_id_v2),
               linewidth = 1, alpha=0.3) +
@@ -1026,14 +1003,11 @@ p <- ggplot() +
                size = 1.3, color = "black", pch = 21, alpha = 1) +
   geom_text(data = df_curve_labels,
                   aes(x = oxi_time, y = CH4_pred, label = sample_id_v2),
-                  #nudge_x = 8,            # push label to the right
-                  #direction = "y",
                   hjust = -0.5,
-               #   vjust=0.5,
-                  #segment.size = 0.2,
+
                   size = 5 / .pt,
                   show.legend = FALSE) +
-  # label for negative control
+
   geom_text(data = df_ctrl_label,
                   aes(x = oxi_time, y = Amount, label = sample_id),
                   color = "grey40",
@@ -1041,7 +1015,7 @@ p <- ggplot() +
                   size = 5 / .pt,
                   show.legend = FALSE) +
     scale_fill_manual(name = legend_title_expr, values = custom_colors, labels = legend_labels_rates)+ #, name = expression(C(t) == C[0] %.% e^{-k * t})) +
-    scale_color_manual(name = legend_title_expr, values = custom_colors, labels = legend_labels_rates )+ #, name = expression(C(t) == C[0] %.% e^{-k * t}))+
+    scale_color_manual(name = legend_title_expr, values = custom_colors, labels = legend_labels_rates )+ 
     labs(
       x = "Time [min]",
       y = expression(CH[4]~"[ppm]")
@@ -1095,18 +1069,14 @@ tbl <- df_slopes2 %>%
   dplyr::select(Sample, k, r_soil, R2) %>%
   arrange(Sample)
 
-# create tableGrob with plain headers (we will replace them)
+
 tbl_theme <- ttheme_minimal(
-  core = list(fg_params = list(fontsize = 5)),      # 5 pt body
-  colhead = list(fg_params = list(fontface = "bold", fontsize = 5)) # initial header style
-)
+  core = list(fg_params = list(fontsize = 5)),      
+  colhead = list(fg_params = list(fontface = "bold", fontsize = 5)) 
 
 tbl_grob <- tableGrob(tbl, rows = NULL, theme = tbl_theme)
 
-# define the plotmath expressions for the headers
-# Define header expressions with units using plotmath
-# - k [h^-1]
-# - r[soil] [10^-4 * mu * mol ~ h^-1 ~ g^-1]
+
 header_exprs <- list(
   expression("Sample"),
   expression(k ~ "[" ~ h^-1 ~ "]"),
@@ -1115,17 +1085,16 @@ header_exprs <- list(
 )
 
 
-# find the indices of the column header grobs in the tableGrob
-# the layout names for header text are typically "colhead-fg"
+
 colhead_idx <- which(tbl_grob$layout$name == "colhead-fg")
 
-# sanity check: if not found, print available layout names (helps debugging)
+
 if (length(colhead_idx) != length(header_exprs)) {
   message("Unexpected header grob layout. Available layout names:")
   print(unique(tbl_grob$layout$name))
 }
 
-# replace each header grob with a textGrob using the expression
+
 for (i in seq_along(header_exprs)) {
   if (i <= length(colhead_idx)) {
     tg <- textGrob(label = header_exprs[[i]],
@@ -1135,11 +1104,11 @@ for (i in seq_along(header_exprs)) {
   }
 }
 
-# optional: tweak column widths
-tbl_grob$widths <- unit(c(0.4, 0.4, 0.7, 0.4), "in")
-#tbl_grob$heights <- tbl_grob$heights * 0.8
 
-# remove legend from plot and combine
+tbl_grob$widths <- unit(c(0.4, 0.4, 0.7, 0.4), "in")
+
+
+
 p_no_legend <- p + theme(legend.position = "none")
 
 final <- plot_grid(
